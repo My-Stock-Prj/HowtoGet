@@ -1,0 +1,33 @@
+name: KIS-Manual-Run
+
+# 실행 조건: 사용자가 버튼을 직접 누를 때만 실행
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 코드를 가져옵니다
+      uses: actions/checkout@v3
+
+    - name: 파이썬을 설치합니다
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: 필요한 라이브러리를 설치합니다
+      run: |
+        pip install requests pandas google-auth gspread
+
+    - name: 프로그램 실행
+      env:
+        KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+        KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+        KIS_CANO: ${{ secrets.KIS_CANO }}
+        KIS_ACNT_PRDT_CD: ${{ secrets.KIS_ACNT_PRDT_CD }}
+        KIS_ENV_DV: ${{ secrets.KIS_ENV_DV }}
+        GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+      # 테스트 파일 대신 실제 실행하고 싶은 파일을 적으셔도 됩니다.
+      run: python test_auth.py
