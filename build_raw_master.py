@@ -68,12 +68,13 @@ def build_raw_db():
     print(f"그룹코드 샘플(앞 5개): {raw_df['그룹코드'].head().tolist()}")
     print(f"그룹코드 유니크 값: {raw_df['그룹코드'].unique()}")
 
-    # [무결성 처리 1] 그룹코드 필터링 (01: 주식, 02: ETF)
-    raw_df['그룹코드'] = raw_df['그룹코드'].str.zfill(2)
-    raw_df = raw_df[raw_df['그룹코드'].isin(['01', '02'])].copy()
+    # [무결성 처리 1] 그룹코드 필터링 (ST: 주식, EF: ETF)
+    # 로그 확인 결과 '01', '02' 대신 'ST', 'EF' 등이 사용됨을 확인하여 수정
+    raw_df['그룹코드'] = raw_df['그룹코드'].astype(str).str.strip()
+    raw_df = raw_df[raw_df['그룹코드'].isin(['ST', 'EF'])].copy()
 
     # [디버깅] 필터링 후 결과 확인
-    print(f"필터링(01, 02) 후 건수: {len(raw_df)}")
+    print(f"필터링(ST, EF) 후 건수: {len(raw_df)}")
 
     # [무결성 처리 2] 명시적 Y/N 및 Null 처리
     # YN성 칼럼 리스트 (명칭에 '여부', '지목', '지수', 'KRX' 등이 포함된 칼럼들 대상)
