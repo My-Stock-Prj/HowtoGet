@@ -1,0 +1,16 @@
+# 데이터 처리 및 수치 연산
+pandas
+numpy
+
+# Parquet 파일 생성 및 읽기 (엔진)
+pyarrow
+numpy
+pyarrow
+
+# 구글 시트 연동용
+gspread
+gspread-dataframe
+google-auth
+
+# (선택사항) 향후 성능 최적화나 시계열 분석을 위해 미리 추가해둘 수 있습니다.
+# fastparquet
