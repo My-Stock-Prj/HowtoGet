@@ -1,0 +1,38 @@
+name: KRX Raw Master
+
+on:
+  schedule:
+    # 한국 시간(KST) 오전 08:30 실행 (UTC 23:30)
+    - cron: '30 23 * * *'
+  workflow_dispatch: # 필요 시 수동으로 즉시 실행 가능
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip' # 패키지 설치 속도 향상
+
+      - name: Install Dependencies
+        run: |
+          pip install pandas pyarrow numpy
+
+      - name: Build RAW Master Parquet
+        # 앞서 작성한 파이썬 파일명이 build_raw_master.py 인 경우
+        run: python build_raw_master.py
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          # DB 폴더의 parquet 파일을 스테이징
+          git add DB/raw_mst_krx_full.parquet
+          # 변경사항이 있을 때만 커밋 (데이터가 동일하면 에러 없이 종료)
+          git commit -m "Update RAW Master DB: $(date +'%Y-%m-%d')" || echo "No changes to commit"
+          git push
