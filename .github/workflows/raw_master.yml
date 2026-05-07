@@ -3,7 +3,7 @@ name: KRX Raw Master
 on:
   schedule:
     # 한국 시간(KST) 오전 08:30 실행 (UTC 23:30)
-    - cron: '30 23 * * *'
+    # - cron: '30 23 * * *'
   workflow_dispatch: # 필요 시 수동으로 즉시 실행 가능
 
 jobs:
