@@ -1,16 +1,12 @@
-# 이 파일의 이름은 raw_master.yml
+# raw_master.yml
 name: KRX Raw Master
 
 on:
-  # schedule:
-  #   # 한국 시간(KST) 오전 08:30 실행 (UTC 23:30)
-  #   # - cron: '30 23 * * *'
-  workflow_dispatch: # 수동 실행 가능
+  workflow_dispatch: 
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    # [중요] 저장소에 파일 수정을 push하기 위한 쓰기 권한 설정
     permissions:
       contents: write
 
@@ -22,20 +18,18 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-          cache: 'pip' # 이제 정상적으로 작동합니다.
+          cache: 'pip'
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          # 파일이 있는지 확인 후 requirements.txt로 설치
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Build RAW Master Parquet and Update GSheet
-        # [중요] 파이썬 코드가 구글 API에 접근할 수 있도록 Secrets를 환경 변수로 주입
+      - name: Build RAW Master and Update GSheet
         env:
-          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          # 시크릿 이름을 GCP_CREDENTIALS로 변경
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-        # 생성하신 파이썬 파일명이 build_raw_master.py라고 가정합니다.
         run: python build_raw_master.py
 
       - name: Commit and Push changes
