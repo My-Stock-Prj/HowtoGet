@@ -5,6 +5,11 @@ import zipfile
 import os
 import pandas as pd
 import numpy as np
+# 구글 시트 연동용 라이브러리 추가
+import gspread
+from gspread_dataframe import set_with_dataframe
+from google.oauth2.service_account import Credentials
+import json
 
 # 1. 환경 설정 및 다운로드 함수
 def download_master(market_type):
@@ -54,7 +59,43 @@ def parse_master(file_name, market_code):
     for f in [tmp1, tmp2, file_name]: os.remove(f)
     return full_df
 
-# 3. 메인 통합 및 무결성 처리
+# 3. 구글 시트 업데이트 함수 (추가됨)
+def update_gsheet(df):
+    try:
+        print("구글 시트 업데이트 시작...")
+        # 필요한 칼럼만 추출
+        target_df = df[['단축코드', '종목명', '시장구분']].copy()
+        
+        # 인증 설정
+        scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+        creds_json = os.environ.get('GCP_SERVICE_ACCOUNT_KEY')
+        sheet_id = os.environ.get('GOOGLE_SHEET_ID')
+        
+        if not creds_json or not sheet_id:
+            print("구글 시트 인증 정보가 없어 업데이트를 건너뜁니다.")
+            return
+
+        creds_dict = json.loads(creds_json)
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+        gc = gspread.authorize(creds)
+        
+        # 파일명 'my'의 'mst' 시트 열기
+        sh = gc.open_by_key(sheet_id) # 보안상 ID 사용 권장
+        try:
+            worksheet = sh.worksheet('mst')
+        except gspread.exceptions.WorksheetNotFound:
+            # 시트가 없으면 생성
+            worksheet = sh.add_worksheet(title='mst', rows='100', cols='20')
+            
+        # 데이터 덮어쓰기 (Clear 후 Write)
+        worksheet.clear()
+        set_with_dataframe(worksheet, target_df)
+        print("구글 시트 'mst' 업데이트 완료!")
+        
+    except Exception as e:
+        print(f"구글 시트 업데이트 중 오류 발생: {e}")
+
+# 4. 메인 통합 및 무결성 처리
 def build_raw_db():
     print("마스터 데이터 다운로드 및 파싱 시작...")
     df_stk = parse_master(download_master("kospi"), "STK")
@@ -69,7 +110,6 @@ def build_raw_db():
     print(f"그룹코드 유니크 값: {raw_df['그룹코드'].unique()}")
 
     # [무결성 처리 1] 그룹코드 필터링 (ST: 주식, EF: ETF)
-    # 로그 확인 결과 '01', '02' 대신 'ST', 'EF' 등이 사용됨을 확인하여 수정
     raw_df['그룹코드'] = raw_df['그룹코드'].astype(str).str.strip()
     raw_df = raw_df[raw_df['그룹코드'].isin(['ST', 'EF'])].copy()
 
@@ -77,7 +117,6 @@ def build_raw_db():
     print(f"필터링(ST, EF) 후 건수: {len(raw_df)}")
 
     # [무결성 처리 2] 명시적 Y/N 및 Null 처리
-    # YN성 칼럼 리스트 (명칭에 '여부', '지목', '지수', 'KRX' 등이 포함된 칼럼들 대상)
     yn_cols = [c for c in raw_df.columns if any(x in c for x in ['여부', '지목', '지수', 'KRX', 'SPAC', '제조업', '유동성', '과열', '경고', '정지', '매매', '종목', '가능'])]
     for col in yn_cols:
         raw_df[col] = raw_df[col].fillna('N').replace({'0': 'N', '1': 'Y', ' ': 'N'})
@@ -93,7 +132,7 @@ def build_raw_db():
     for col in str_cols:
         raw_df[col] = raw_df[col].str.strip()
 
-    # 4. 저장 (DB 폴더 하위)
+    # 5. 저장 (DB 폴더 하위)
     save_dir = "DB"
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, "raw_mst_krx_full.parquet")
@@ -101,6 +140,9 @@ def build_raw_db():
     raw_df.to_parquet(save_path, engine='pyarrow', index=False, compression='snappy')
     print(f"완료! RAW DB 저장 경로: {save_path}")
     print(f"최종 칼럼 수: {len(raw_df.columns)}, 데이터 건수: {len(raw_df)}")
+    
+    # [추가] 구글 시트 전송 로직 호출
+    update_gsheet(raw_df)
 
 if __name__ == "__main__":
     build_raw_db()
