@@ -48,6 +48,9 @@ def parse_master(file_name, market_code):
     full_df = pd.concat([df1, df2], axis=1)
     full_df['시장구분'] = market_code
     
+    # [디버깅] 시장별 파싱 결과 확인
+    print(f"[{market_code}] 파싱 완료 - 전체 건수: {len(full_df)}")
+    
     for f in [tmp1, tmp2, file_name]: os.remove(f)
     return full_df
 
@@ -60,12 +63,20 @@ def build_raw_db():
     # 통합 (Outer Join 효과로 모든 칼럼 유지)
     raw_df = pd.concat([df_stk, df_ksq], ignore_index=True)
     
+    # [디버깅] 통합 직후 상태 확인
+    print(f"통합 완료 - 전체 건수: {len(raw_df)}")
+    print(f"그룹코드 샘플(앞 5개): {raw_df['그룹코드'].head().tolist()}")
+    print(f"그룹코드 유니크 값: {raw_df['그룹코드'].unique()}")
+
     # [무결성 처리 1] 그룹코드 필터링 (01: 주식, 02: ETF)
     raw_df['그룹코드'] = raw_df['그룹코드'].str.zfill(2)
     raw_df = raw_df[raw_df['그룹코드'].isin(['01', '02'])].copy()
 
+    # [디버깅] 필터링 후 결과 확인
+    print(f"필터링(01, 02) 후 건수: {len(raw_df)}")
+
     # [무결성 처리 2] 명시적 Y/N 및 Null 처리
-    # YN성 칼럼 리스트 (명칭에 '여부', '지수', 'KRX' 등이 포함된 칼럼들 대상)
+    # YN성 칼럼 리스트 (명칭에 '여부', '지목', '지수', 'KRX' 등이 포함된 칼럼들 대상)
     yn_cols = [c for c in raw_df.columns if any(x in c for x in ['여부', '지목', '지수', 'KRX', 'SPAC', '제조업', '유동성', '과열', '경고', '정지', '매매', '종목', '가능'])]
     for col in yn_cols:
         raw_df[col] = raw_df[col].fillna('N').replace({'0': 'N', '1': 'Y', ' ': 'N'})
@@ -75,8 +86,6 @@ def build_raw_db():
     for col in num_cols:
         if col in raw_df.columns:
             raw_df[col] = pd.to_numeric(raw_df[col], errors='coerce').fillna(0)
-            # 단위 통일 (코스닥 상장주수 등이 천단위인 경우 대응 - API 매뉴얼 기준 확인 필요)
-            # 여기서는 원본 수치를 보존하되 float64/int64로 변환함
 
     # [무결성 처리 4] 문자열 칼럼 공백 제거
     str_cols = raw_df.select_dtypes(include=['object']).columns
