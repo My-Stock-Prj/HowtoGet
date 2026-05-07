@@ -1,7 +1,8 @@
+# 이 파일의 이름은 raw_master.yml
 name: KRX Raw Master
 
 on:
-  schedule:
+  # schedule:
     # 한국 시간(KST) 오전 08:30 실행 (UTC 23:30)
     # - cron: '30 23 * * *'
   workflow_dispatch: # 수동 실행 가능
