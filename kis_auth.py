@@ -90,7 +90,7 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
     'str' object 에러와 printError 인자 오류를 원천 차단합니다.
     """
     global _env
-    if _env is None: from kis_auth import TREnv; _env = TREnv()
+    if _env is None: _env = getTREnv()
     
     full_url = f"{_env.my_url}{url}" if url.startswith('/') else url
 
@@ -110,6 +110,7 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
         # 3. 응답 객체에 표준 메서드 강제 주입 (Monkey Patching)
         # .isOK()와 .printError(url=...) 호출에 모두 대응
         resp.isOK = lambda: resp.status_code == 200
+        # 가변 인자를 허용하여 'url' 키워드 인자 등이 들어와도 에러 없이 처리
         resp.printError = lambda *args, **kwargs: None 
         
         return resp
