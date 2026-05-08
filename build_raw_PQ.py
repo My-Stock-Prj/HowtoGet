@@ -6,9 +6,8 @@ import os
 import time
 import traceback
 from datetime import datetime
-import kis_auth as ka  # 한국투자증권 인증 모듈
+import kis_auth as ka  # 별칭 사용 권장
 import gspread
-
 # 국내 주식 표준 함수 임포트
 from domestic_stock_functions import inquire_daily_itemchartprice
 
@@ -52,20 +51,20 @@ def fetch_daily_price(ticker, target_date):
     지식 베이스의 표준 함수를 활용하여 데이터를 수집합니다.
     """
     try:
-        # 국내주식기간별시세(일/주/월) API 호출
+        # GEMS 지식 베이스의 표준 함수 정의(위치 인자 방식)에 맞춰 수정함
         df_res = inquire_daily_itemchartprice(
-            env_dv="real", 
-            FID_COND_MRKT_DIV_CODE="J", 
-            FID_INPUT_ISCD=ticker, 
-            FID_INPUT_DATE_1=target_date, 
-            FID_INPUT_DATE_2=target_date, 
-            FID_PERIOD_DIV_CODE="D", 
-            FID_ORG_ADJ_PRC="1"
+            "real",         # env_dv
+            "J",            # FID_COND_MRKT_DIV_CODE
+            ticker,         # FID_INPUT_ISCD
+            target_date,    # FID_INPUT_DATE_1
+            target_date,    # FID_INPUT_DATE_2
+            "D",            # FID_PERIOD_DIV_CODE
+            "1"             # FID_ORG_ADJ_PRC
         )
 
         if df_res is not None and not df_res.empty:
             d = df_res.iloc[0]
-            # API 응답 필드: prdy_ctrt(전일 대비율), prdy_vrss_vol(전일 대비 거래량 증감)
+            # 요청하신 prdy_ctrt, prdy_vrss_vol 칼럼 추가
             return {
                 "날짜": target_date, 
                 "종목코드": ticker,
@@ -75,8 +74,8 @@ def fetch_daily_price(ticker, target_date):
                 "종가": int(d['stck_clpr']),
                 "거래량": int(d['acml_vol']), 
                 "거래대금": int(d['acml_tr_pbmn']),
-                "전일대비등락률": float(d['prdy_ctrt']),
-                "전일대비거래량": int(d['prdy_vrss_vol'])
+                "전일대비등락률": float(d.get('prdy_ctrt', 0)),     # 신규 추가
+                "전일대비거래량": int(d.get('prdy_vrss_vol', 0))   # 신규 추가
             }
     except Exception as e:
         print(f"⚠️ [{ticker}] 데이터 파싱 실패: {str(e)}")
@@ -85,7 +84,7 @@ def fetch_daily_price(ticker, target_date):
 def main():
     print(f"🚀 {datetime.now()} 프로세스 시작")
     try:
-        # 1. 인증 초기화 (kis_auth.py의 auth 함수 호출)
+        # 1. 인증 초기화 (내부 전역 변수에 세팅됨)
         ka.auth() 
         
         # 2. 대상 리스트 확보
@@ -97,16 +96,13 @@ def main():
         # 3. 데이터 수집
         target_date = "20260504"
         collected = []
-        total = len(tickers)
-        for i, ticker in enumerate(tickers):
+        for ticker in tickers:
             res = fetch_daily_price(ticker, target_date)
             if res: 
                 collected.append(res)
             
-            # API 초당 호출 제한 방지를 위한 지연 (0.2초)
-            time.sleep(0.2)
-            if (i + 1) % 10 == 0:
-                print(f"📊 진행률: {i+1}/{total} 완료...")
+            # API 제한 방지를 위한 지연
+            time.sleep(0.2) 
 
         # 4. 저장 로직
         if collected:
@@ -115,7 +111,7 @@ def main():
                 df_old = pd.read_parquet(SAVE_PATH)
                 df_new = pd.concat([df_old, df_new]).drop_duplicates(subset=['날짜', '종목코드'], keep='last')
             
-            # 상위 디렉토리가 없을 경우 생성
+            # 상위 폴더 생성 보장
             os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
             df_new.to_parquet(SAVE_PATH, index=False)
             print(f"✅ 저장 완료: {len(df_new)} rows (신규 {len(collected)}건)")
