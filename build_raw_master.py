@@ -62,7 +62,8 @@ def parse_master(file_name, market_code):
 def update_gsheet(df):
     try:
         print("구글 시트 업데이트 시작 (파일명: 'my', 시트명: 'mst')...")
-        target_df = df[['단축코드', '종목명', '시장구분']].copy()
+        # 💡 시장구분 값 변환: STK -> KOSPI, KSQ -> KOSDAQ
+        target_df['시장구분'] = target_df['시장구분'].replace({'STK': 'KOSPI', 'KSQ': 'KOSDAQ'})
         
         # GCP_CREDENTIALS 환경 변수를 통해 인증 객체 생성
         creds_json = os.environ.get('GCP_CREDENTIALS')
