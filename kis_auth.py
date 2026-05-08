@@ -85,42 +85,50 @@ def get_gcp_creds(scopes=None):
         return None
         
 def _url_fetch(url, headers, tr_id, params=None, is_post=False):
-    """
-    [마스터 데이터 수집용 최종 통신 함수]
-    'str' object 에러와 printError 인자 오류를 원천 차단합니다.
-    """
     global _env
     if _env is None: _env = getTREnv()
     
     full_url = f"{_env.my_url}{url}" if url.startswith('/') else url
 
+    # [DEBUG] 보낼 데이터 확인
+    print(f"\n📡 [DEBUG SEND] URL: {full_url}")
+    print(f"📡 [DEBUG SEND] TR_ID: {tr_id}")
+    
     try:
-        # 1. 호출 규격 준수: params가 str이면 dict로 복구 (items 에러 방지)
         if isinstance(params, str):
-            try:
-                params = json.loads(params)
+            try: params = json.loads(params)
             except: pass
 
-        # 2. 통신 수행
+        # 통신 수행
         if is_post:
             resp = requests.post(full_url, headers=headers, json=params)
         else:
             resp = requests.get(full_url, headers=headers, params=params)
         
-        # 3. 응답 객체에 표준 메서드 강제 주입 (Monkey Patching)
-        # .isOK()와 .printError(url=...) 호출에 모두 대응
-        resp.isOK = lambda: resp.status_code == 200
-        # 가변 인자를 허용하여 'url' 키워드 인자 등이 들어와도 에러 없이 처리
-        resp.printError = lambda *args, **kwargs: None 
+        # ---------------------------------------------------------
+        # [DEBUG] 서버 회신 값 그대로 출력 (핵심 디버깅 구간)
+        # ---------------------------------------------------------
+        print(f"📥 [DEBUG RECV] Status Code: {resp.status_code}")
+        print(f"📥 [DEBUG RECV] Response Headers: {dict(resp.headers)}")
         
+        try:
+            # 정상적인 JSON 응답인 경우
+            print(f"📥 [DEBUG RECV] Body(JSON): {json.dumps(resp.json(), indent=2, ensure_ascii=False)}")
+        except:
+            # JSON이 아닌 경우 (HTML 에러 페이지 등)
+            print(f"📥 [DEBUG RECV] Body(Raw Text): {resp.text[:500]}") # 너무 길면 잘라서 500자까지
+        print("-" * 50)
+        # ---------------------------------------------------------
+
+        resp.isOK = lambda: resp.status_code == 200
+        resp.printError = lambda *args, **kwargs: None 
         return resp
 
     except Exception as e:
-        # 4. 서버 점검 등 비상 상황 시 반환할 무적의 Mock 객체
+        print(f"❗ [DEBUG ERROR] 통신 자체 실패: {str(e)}")
         class MockResp:
             def isOK(self): return False
-            def printError(self, *args, **kwargs):
-                print(f"   [시스템 정보] API 응답 없음 (서버 점검 가능성)")
+            def printError(self, *args, **kwargs): pass
             def json(self): return {}
             @property
             def status_code(self): return 500
