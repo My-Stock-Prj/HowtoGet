@@ -49,6 +49,7 @@ def get_combined_targets():
 def fetch_daily_price(ticker, target_date):
     try:
         # GEMS 표준 함수는 (DataFrame, Response) 형태의 튜플을 반환합니다.
+        # GEMS 표준 함수 호출
         result = inquire_daily_itemchartprice(
             "real", "J", ticker, target_date, target_date, "D", "1"
         )
@@ -56,24 +57,29 @@ def fetch_daily_price(ticker, target_date):
         # 1. 튜플에서 데이터프레임만 분리 (표준 규격 대응)
         df_res = result[0] if isinstance(result, tuple) else result
 
-        # 2. 마스터 데이터 규격에 맞춘 순수 시세 추출 (가공 필드 제외)
+        # 2. 데이터 존재 여부 및 컬럼명 확인 후 매핑
         if df_res is not None and not df_res.empty:
+            # 첫 번째 행 데이터 가져오기
             d = df_res.iloc[0]
             
+            # API 응답 필드명이 대문자인 경우와 소문자인 경우 모두 대응
+            # 딕셔너리의 .get()을 사용하여 키가 없어도 에러가 나지 않게 방어
             return {
                 "날짜": target_date, 
                 "종목코드": ticker,
-                "시가": int(d['stck_oprc']), 
-                "고가": int(d['stck_hgpr']),
-                "저가": int(d['stck_lwpr']), 
-                "종가": int(d['stck_clpr']),
-                "거래량": int(d['acml_vol']), 
-                "거래대금": int(d['acml_tr_pbmn']),
+                "시가": int(d.get('stck_oprc', d.get('STCK_OPRC', 0))), 
+                "고가": int(d.get('stck_hgpr', d.get('STCK_HGPR', 0))),
+                "저가": int(d.get('stck_lwpr', d.get('STCK_LWPR', 0))), 
+                "종가": int(d.get('stck_clpr', d.get('STCK_CLPR', 0))),
+                "거래량": int(d.get('acml_vol', d.get('ACML_VOL', 0))), 
+                "거래대금": int(d.get('acml_tr_pbmn', d.get('ACML_TR_PBMN', 0))),
                 "재평가사유": d.get('revl_issu_reas', '')
             }
             
     except Exception as e:
-        print(f"⚠️ [{ticker}] 마스터 추출 실패: {str(e)}")
+        # traceback을 통해 정확히 어디서 에러가 나는지 출력 (디버깅용)
+        # print(traceback.format_exc()) 
+        print(f"⚠️ [{ticker}] 데이터 처리 실패: {str(e)}")
     return None
 
 def main():
