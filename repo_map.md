@@ -1,8 +1,6 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-08 09:33:10
-- **Status**: Security Managed (Environment Variables Used)
-
-> **AI Instruction**: 이 프로젝트는 보안을 위해 민감한 설정을 환경 변수로 관리합니다.
+- **Generated Date**: 2026-05-08 09:36:33
+- **Status**: Debugging Enabled
 
 ---
 
@@ -10,7 +8,7 @@
 ### 📄 `build_raw_master.py`
   - `download_master(market_type)`
   - `parse_master(file_name, market_code)`
-  - `update_gsheet(df)` `[EnvRef]`
+  - `update_gsheet(df)`
   - `build_raw_db()`
 ### 📄 `kis_auth.py`
   - `getEnv()` - *서버 주소 정보 반환*
@@ -20,7 +18,11 @@
   - `set_order_hash(headers, data)` - *주문 해시값 설정 (기존 기능 유지)*
 
 ## 📂 Directory: DB
-### 📊 `m.parquet` (Empty or Locked)
-### 📊 `raw_mst_krx_full.parquet` (Empty or Locked)
+### 📊 `m.parquet`
+  - ⚠️ **Analysis Failed**: `Could not open Parquet input source '<Buffer>': Parquet file size is 1 bytes, smaller than the minimum file footer (8 bytes)`
+### 📊 `raw_mst_krx_full.parquet`
+  - ⚠️ **Analysis Failed**: `time data "0" doesn't match format "%Y%m%d", at position 2017. You might want to try:`
 
 ## 📂 Directory: workflows
+### ⚙️ `raw_master.yml` (Workflow)
+### ⚙️ `repo_map_update.yml` (Workflow)
