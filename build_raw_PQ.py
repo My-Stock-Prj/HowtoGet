@@ -22,25 +22,24 @@ def get_combined_targets():
         idx_tickers = []
         if os.path.exists(MST_PATH):
             df_mst = pd.read_parquet(MST_PATH)
-            print(f"   - 마스터 파일 로드 성공: {len(df_mst)} 건")
-            print(f"   - 마스터 컬럼명 확인: {df_mst.columns.tolist()[:10]}") # 컬럼명 일부 출력
             
             if not df_mst.empty:
                 cond = pd.Series([False] * len(df_mst))
-                # 컬럼 존재 여부 체크 로그 추가
+                
+                # [수정 핵심] 마스터 생성 코드에서 1을 'Y'로 변환했으므로 조건을 'Y'로 변경
                 if 'KOSPI200섹터업종' in df_mst.columns:
-                    cond |= (df_mst['KOSPI200섹터업종'] == 1)
-                    print(f"   - KOSPI200 필터링 후: {cond.sum()} 건")
+                    cond |= (df_mst['KOSPI200섹터업종'] == 'Y')
+                
                 if 'KOSDAQ150' in df_mst.columns:
-                    cond |= (df_mst['KOSDAQ150'] == 1)
-                    print(f"   - KOSDAQ150 합산 후: {cond.sum()} 건")
+                    cond |= (df_mst['KOSDAQ150'] == 'Y')
+                
+                # 만약 위 두 조건으로도 부족하다면, 시장 전체를 가져오는 대안 (선택 사항)
+                # cond |= df_mst['시장구분'].isin(['STK', 'KSQ'])
                 
                 idx_tickers = df_mst[cond]['단축코드'].unique().tolist()
-                print(f"   - 최종 인덱스 종목 수: {len(idx_tickers)} 건")
-        else:
-            print(f"⚠️ [경고] 마스터 파일이 존재하지 않습니다: {MST_PATH}")
+                print(f"   - 필터링 결과 ('Y' 기준): {len(idx_tickers)} 건")
         
-        # 구글 시트 분석
+        # 구글 시트 부분 (기존 유지)
         scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         creds = ka.get_gcp_creds(scopes)
         gsheet_tickers = []
@@ -50,11 +49,13 @@ def get_combined_targets():
             gsheet_tickers = sheet.col_values(1)[1:]
         
         final_list = list(set(idx_tickers + gsheet_tickers))
+        print(f"🚀 최종 합계: {len(final_list)} 건")
         return [str(t).strip() for t in final_list if t]
+        
     except Exception as e:
         print(f"❌ [ERROR] get_combined_targets 실패: {str(e)}")
         return []
-
+        
 def fetch_daily_price(ticker, target_date):
     try:
         # GEMS 표준 함수는 (DataFrame, Response) 형태의 튜플을 반환합니다.
