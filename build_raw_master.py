@@ -1,3 +1,4 @@
+# 이 코드는 build_raw_master.py 파일
 # MST 파일 생성용 및 구글 시트 통합 (방법 A 적용 버전)
 import urllib.request
 import ssl
@@ -88,7 +89,6 @@ def update_gsheet(df):
         worksheet.clear()
         
         # 💡 [핵심] A열(단축코드 열)을 텍스트 형식으로 강제 지정하여 '0' 사라짐 방지
-        # 라이브러리 버전에 상관없이 작동하는 방식입니다.
         worksheet.format("A:A", {"numberFormat": {"type": "TEXT"}})
         
         # 💡 에러가 발생하는 string_cols 인자를 제거하고 호출
@@ -114,7 +114,8 @@ def build_raw_db():
     print(f"필터링(ST, EF) 후 건수: {len(raw_df)}")
 
     # 여부 칼럼 Y/N 처리
-    yn_cols = [c for c in raw_df.columns if any(x in c for x in ['여부', '지목', '지수', 'KRX', 'SPAC', '제조업', '유동성', '과열', '경고', '정지', '매매', '종목', '가능'])]
+    # [수정] 150이나 200이 포함된 지수 컬럼이 yn_cols에서 누락되지 않도록 '150', '200' 키워드 추가
+    yn_cols = [c for c in raw_df.columns if any(x in c for x in ['여부', '지목', '지수', 'KRX', 'SPAC', '제조업', '유동성', '과열', '경고', '정지', '매매', '종목', '가능', '150', '200'])]
     for col in yn_cols:
         raw_df[col] = raw_df[col].fillna('N').replace({'0': 'N', '1': 'Y', ' ': 'N'})
 
