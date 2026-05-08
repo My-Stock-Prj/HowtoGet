@@ -126,6 +126,8 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
 
         resp.isOK = lambda: resp.status_code == 200
         resp.printError = lambda *args, **kwargs: None 
+        # [추가] getBody() 호출 시 json 데이터를 반환하도록 연결
+        resp.getBody = lambda: resp.json()
         return resp
 
     except Exception as e:
