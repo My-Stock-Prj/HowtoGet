@@ -47,24 +47,20 @@ def get_combined_targets():
         return []
 
 def fetch_daily_price(ticker, target_date):
-    """
-    지식 베이스의 표준 함수를 활용하여 데이터를 수집합니다.
-    """
     try:
-        # GEMS 지식 베이스의 표준 함수 정의(위치 인자 방식)에 맞춰 수정함
+        # GEMS 지식 가이드 규격: env_dv, 시장분류, 종목코드, 시작일, 종료일, 기간, 수정주가여부
         df_res = inquire_daily_itemchartprice(
-            "real",         # env_dv
-            "J",            # FID_COND_MRKT_DIV_CODE
-            ticker,         # FID_INPUT_ISCD
-            target_date,    # FID_INPUT_DATE_1
-            target_date,    # FID_INPUT_DATE_2
-            "D",            # FID_PERIOD_DIV_CODE
-            "1"             # FID_ORG_ADJ_PRC
+            "real",         # env_dv (실전투자)
+            "J",            # FID_COND_MRKT_DIV_CODE (주식)
+            ticker,         # FID_INPUT_ISCD (종목코드)
+            target_date,    # FID_INPUT_DATE_1 (시작일)
+            target_date,    # FID_INPUT_DATE_2 (종료일)
+            "D",            # FID_PERIOD_DIV_CODE (일봉)
+            "1"             # FID_ORG_ADJ_PRC (수정주가)
         )
 
         if df_res is not None and not df_res.empty:
             d = df_res.iloc[0]
-            # 요청하신 prdy_ctrt, prdy_vrss_vol 칼럼 추가
             return {
                 "날짜": target_date, 
                 "종목코드": ticker,
@@ -74,11 +70,11 @@ def fetch_daily_price(ticker, target_date):
                 "종가": int(d['stck_clpr']),
                 "거래량": int(d['acml_vol']), 
                 "거래대금": int(d['acml_tr_pbmn']),
-                "전일대비등락률": float(d.get('prdy_ctrt', 0)),     # 신규 추가
-                "전일대비거래량": int(d.get('prdy_vrss_vol', 0))   # 신규 추가
+                "전일대비등락률": float(d.get('prdy_ctrt', 0)),
+                "전일대비거래량": int(d.get('prdy_vrss_vol', 0))
             }
     except Exception as e:
-        print(f"⚠️ [{ticker}] 데이터 파싱 실패: {str(e)}")
+        print(f"⚠️ [{ticker}] 데이터 처리 오류: {str(e)}")
     return None
 
 def main():
