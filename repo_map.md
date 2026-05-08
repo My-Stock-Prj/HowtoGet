@@ -1,10 +1,15 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-08 14:55:33
+- **Generated Date**: 2026-05-08 15:02:35
 - **Status**: Strict Data Integrity Monitoring
 
 ---
 
 ## 📂 Directory: Root
+### 📄 `auth_functions.py`
+  - `get_base_url()` - *kis_auth.py의 설정을 바탕으로 현재 환경(실전/모의)에 맞는 베이스 URL을 반환합니다.*
+  - `auth_token()` - *kis_auth.py의 auth 함수를 호출하여 접근 토큰을 발급받고 결과를 반환합니다.*
+  - `get_header()` - *API 호출에 필요한 표준 헤더 구성을 도와주는 유틸리티 함수입니다.*
+  - `get_env_info()` - *현재 접속 환경 정보를 반환합니다.*
 ### 📄 `build_raw_PQ.py`
   - `get_combined_targets()` - *저장 대상 종목 확정 (기본 로직 유지)*
   - `fetch_daily_price(ticker, target_date)` - *지식 베이스의 표준 함수를 활용하여 데이터를 수집합니다.*
