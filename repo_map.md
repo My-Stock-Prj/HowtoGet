@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-08 09:36:33
+- **Generated Date**: 2026-05-08 09:38:56
 - **Status**: Debugging Enabled
 
 ---
@@ -18,8 +18,6 @@
   - `set_order_hash(headers, data)` - *주문 해시값 설정 (기존 기능 유지)*
 
 ## 📂 Directory: DB
-### 📊 `m.parquet`
-  - ⚠️ **Analysis Failed**: `Could not open Parquet input source '<Buffer>': Parquet file size is 1 bytes, smaller than the minimum file footer (8 bytes)`
 ### 📊 `raw_mst_krx_full.parquet`
   - ⚠️ **Analysis Failed**: `time data "0" doesn't match format "%Y%m%d", at position 2017. You might want to try:`
 
