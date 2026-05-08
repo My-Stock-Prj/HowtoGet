@@ -89,7 +89,34 @@ def get_gcp_creds(scopes=None):
         return service_account.Credentials.from_service_account_info(creds_info, scopes=scopes)
     except:
         return None
-        
+
+def get_stock_base_info(stock_code):
+    """
+    주식기본조회 (CTPF1101R) 호출 함수
+    """
+    # 1. 인증 정보 확인 및 토큰 발급 (필요 시)
+    global _env
+    if _env is None or not _env.access_token:
+        auth()
+    
+    # 2. API 경로 및 파라미터 설정
+    path = "/uapi/domestic-stock/v1/quotations/search-stock-info"
+    tr_id = "CTPF1101R"
+    
+    params = {
+        "PRDT_TYPE_CD": "300", # 주식/ETF/ETN 통합 구분
+        "PDNO": stock_code     # 종목코드 (6자리)
+    }
+
+    # 3. 내부 엔진(_url_fetch)을 통해 호출
+    # 주식기본조회는 GET 방식이므로 is_post=False
+    resp = _url_fetch(path, {}, tr_id, params, is_post=False)
+    
+    if resp.isOK():
+        return resp.getBody() # AttrDict 객체 반환 (res.output 형태로 접근 가능)
+    else:
+        return None
+
 def _url_fetch(url, headers, tr_id, params=None, is_post=False):
     global _env
     if _env is None: _env = getTREnv()
@@ -146,3 +173,4 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
             @property
             def status_code(self): return 500
         return MockResp()
+
