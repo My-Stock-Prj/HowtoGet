@@ -1,4 +1,4 @@
-# MST 파일 생성용 및 구글 시트 통합
+# MST 파일 생성용 및 구글 시트 통합 (방법 A 적용 버전)
 import urllib.request
 import ssl
 import zipfile
@@ -28,7 +28,7 @@ def download_master(market_type):
     os.remove(file_zip)
     return f"{market_type}_code.mst"
 
-# 2. 파싱 엔진 (KOSPI: 228 bytes / KOSDAQ: 222 bytes)
+# 2. 파싱 엔진
 def parse_master(file_name, market_code):
     p2_len = 228 if market_code == "STK" else 222
     tmp1, tmp2 = "part1.tmp", "part2.tmp"
@@ -58,17 +58,17 @@ def parse_master(file_name, market_code):
     for f in [tmp1, tmp2, file_name]: os.remove(f)
     return full_df
 
-# 3. 구글 시트 업데이트 함수 (파일명 'my' 기반 접근으로 수정)
+# 3. 구글 시트 업데이트 함수 (방법 A 적용)
 def update_gsheet(df):
     try:
         print("구글 시트 업데이트 시작 (파일명: 'my', 시트명: 'mst')...")
-        # 💡 시장구분 값 변환: STK -> KOSPI, KSQ -> KOSDAQ
+        
+        # 1. 대상 데이터 생성 및 시장구분 명칭 변경
         target_df = df[['단축코드', '종목명', '시장구분']].copy()
         target_df['시장구분'] = target_df['시장구분'].replace({'STK': 'KOSPI', 'KSQ': 'KOSDAQ'})
         
-        # GCP_CREDENTIALS 환경 변수를 통해 인증 객체 생성
+        # 2. 인증 로직
         creds_json = os.environ.get('GCP_CREDENTIALS')
-        
         if not creds_json:
             print("인증 정보(GCP_CREDENTIALS)가 없어 중단합니다.")
             return
@@ -78,23 +78,22 @@ def update_gsheet(df):
         creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
         gc = gspread.authorize(creds)
         
-        # 파일명 'my'로 직접 열기
-        try:
-            sh = gc.open('my')
-        except gspread.exceptions.SpreadsheetNotFound:
-            print("에러: 'my'라는 이름의 구글 시트 파일을 찾을 수 없습니다.")
-            print("서비스 계정 이메일이 해당 시트에 '편집자'로 공유되어 있는지 확인하세요.")
-            return
-
-        # 'mst' 시트 열기
+        sh = gc.open('my')
         try:
             worksheet = sh.worksheet('mst')
         except gspread.exceptions.WorksheetNotFound:
             worksheet = sh.add_worksheet(title='mst', rows='100', cols='10')
             
+        # 3. 데이터 쓰기 로직 (방법 A 적용)
         worksheet.clear()
-        # string_cols=['단축코드']를 추가하여 앞자리 0이 사라지지 않게 처리
-        set_with_dataframe(worksheet, target_df, string_cols=['단축코드'])
+        
+        # 💡 [핵심] A열(단축코드 열)을 텍스트 형식으로 강제 지정하여 '0' 사라짐 방지
+        # 라이브러리 버전에 상관없이 작동하는 방식입니다.
+        worksheet.format("A:A", {"numberFormat": {"type": "TEXT"}})
+        
+        # 💡 에러가 발생하는 string_cols 인자를 제거하고 호출
+        set_with_dataframe(worksheet, target_df)
+        
         print("구글 시트 'my' 파일의 'mst' 시트 업데이트 완료!")
         
     except Exception as e:
@@ -107,31 +106,30 @@ def build_raw_db():
     df_ksq = parse_master(download_master("kosdaq"), "KSQ")
     
     raw_df = pd.concat([df_stk, df_ksq], ignore_index=True)
-    
-    # [디버깅 로그 유지]
     print(f"통합 완료 - 전체 건수: {len(raw_df)}")
-    print(f"그룹코드 유니크 값: {raw_df['그룹코드'].unique()}")
 
-    # [무결성 처리 1] 필터링 (ST: 주식, EF: ETF)
+    # 무결성 처리: 그룹코드 필터링
     raw_df['그룹코드'] = raw_df['그룹코드'].astype(str).str.strip()
     raw_df = raw_df[raw_df['그룹코드'].isin(['ST', 'EF'])].copy()
     print(f"필터링(ST, EF) 후 건수: {len(raw_df)}")
 
-    # [무결성 처리 2/3/4 유지]
+    # 여부 칼럼 Y/N 처리
     yn_cols = [c for c in raw_df.columns if any(x in c for x in ['여부', '지목', '지수', 'KRX', 'SPAC', '제조업', '유동성', '과열', '경고', '정지', '매매', '종목', '가능'])]
     for col in yn_cols:
         raw_df[col] = raw_df[col].fillna('N').replace({'0': 'N', '1': 'Y', ' ': 'N'})
 
+    # 수치형 칼럼 처리
     num_cols = ['기준가', '상장주수', '자본금', '액면가', '전일거래량', '매출액', '영업이익', '경상이익', '당기순이익', 'ROE', '시가총액']
     for col in num_cols:
         if col in raw_df.columns:
             raw_df[col] = pd.to_numeric(raw_df[col], errors='coerce').fillna(0)
 
+    # 문자열 공백 제거
     str_cols = raw_df.select_dtypes(include=['object']).columns
     for col in str_cols:
         raw_df[col] = raw_df[col].str.strip()
 
-    # 5. 저장 및 시트 업데이트
+    # 결과 저장
     save_dir = "DB"
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, "raw_mst_krx_full.parquet")
@@ -139,6 +137,7 @@ def build_raw_db():
     
     print(f"최종 칼럼 수: {len(raw_df.columns)}, 데이터 건수: {len(raw_df)}")
     
+    # 시트 업데이트 호출
     update_gsheet(raw_df)
 
 if __name__ == "__main__":
