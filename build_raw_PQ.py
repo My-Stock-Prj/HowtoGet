@@ -48,15 +48,18 @@ def get_combined_targets():
 
 def fetch_daily_price(ticker, target_date):
     try:
-        # GEMS 표준 함수 호출
-        df_res = inquire_daily_itemchartprice(
+        # GEMS 표준 함수는 (DataFrame, Response) 형태의 튜플을 반환합니다.
+        result = inquire_daily_itemchartprice(
             "real", "J", ticker, target_date, target_date, "D", "1"
         )
 
+        # 1. 튜플에서 데이터프레임만 분리
+        df_res = result[0] if isinstance(result, tuple) else result
+
+        # 2. 이제 df_res는 DataFrame이므로 .empty 사용 가능
         if df_res is not None and not df_res.empty:
             d = df_res.iloc[0]
             
-            # 순수 마스터 데이터셋 (가공 필드 완전 제거)
             return {
                 "날짜": target_date, 
                 "종목코드": ticker,
@@ -68,6 +71,7 @@ def fetch_daily_price(ticker, target_date):
                 "거래대금": int(d['acml_tr_pbmn']),
                 "재평가사유": d.get('revl_issu_reas', '')
             }
+            
     except Exception as e:
         print(f"⚠️ [{ticker}] 마스터 추출 실패: {str(e)}")
     return None
