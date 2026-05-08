@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-08 09:21:41
+- **Generated Date**: 2026-05-08 09:33:10
 - **Status**: Security Managed (Environment Variables Used)
 
 > **AI Instruction**: 이 프로젝트는 보안을 위해 민감한 설정을 환경 변수로 관리합니다.
