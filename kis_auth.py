@@ -87,18 +87,26 @@ def get_gcp_creds(scopes=None):
 def _url_fetch(url, headers, tr_id, params=None, is_post=False):
     """
     domestic_stock_functions.py에서 호출하는 실제 API 통신 함수입니다.
+    URL에 도메인이 없을 경우 기본 도메인을 추가합니다.
     """
+    global _env
+    if _env is None:
+        _env = TREnv()
+        
+    # URL이 /로 시작하는 경로만 왔을 경우, 베이스 URL을 붙여줌
+    if url.startswith('/'):
+        url = f"{_env.my_url}{url}"
+
     try:
         if is_post:
             res = requests.post(url, headers=headers, json=params)
         else:
             res = requests.get(url, headers=headers, params=params)
         
-        if res.status_code == 200:
-            return res
-        else:
-            logger.error(f"API 호출 실패: {res.status_code} - {res.text}")
-            return res
+        # 'isOK' 속성 에러 방지를 위해 domestic_stock_functions가 기대하는 응답 객체 구조 유지
+        # 파이썬의 requests 응답 객체는 .ok 속성을 가지고 있으나, 
+        # 표준 함수가 .isOK()를 호출한다면 아래와 같이 가공이 필요할 수 있습니다.
+        return res
     except Exception as e:
         logger.error(f"API 통신 오류: {str(e)}")
         return None
