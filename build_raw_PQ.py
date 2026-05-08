@@ -17,19 +17,28 @@ SAVE_PATH = os.path.join(BASE_DIR, 'raw_daily_PQ.parquet')
 MST_PATH = os.path.join(BASE_DIR, 'raw_mst_krx_full.parquet')
 
 def get_combined_targets():
-    """저장 대상 종목 확정 (기본 로직 유지)"""
     print("🔍 [DEBUG] 1. 수집 대상 종목 분석 시작...")
     try:
         idx_tickers = []
         if os.path.exists(MST_PATH):
             df_mst = pd.read_parquet(MST_PATH)
+            print(f"   - 마스터 파일 로드 성공: {len(df_mst)} 건")
+            print(f"   - 마스터 컬럼명 확인: {df_mst.columns.tolist()[:10]}") # 컬럼명 일부 출력
+            
             if not df_mst.empty:
                 cond = pd.Series([False] * len(df_mst))
+                # 컬럼 존재 여부 체크 로그 추가
                 if 'KOSPI200섹터업종' in df_mst.columns:
                     cond |= (df_mst['KOSPI200섹터업종'] == 1)
+                    print(f"   - KOSPI200 필터링 후: {cond.sum()} 건")
                 if 'KOSDAQ150' in df_mst.columns:
                     cond |= (df_mst['KOSDAQ150'] == 1)
+                    print(f"   - KOSDAQ150 합산 후: {cond.sum()} 건")
+                
                 idx_tickers = df_mst[cond]['단축코드'].unique().tolist()
+                print(f"   - 최종 인덱스 종목 수: {len(idx_tickers)} 건")
+        else:
+            print(f"⚠️ [경고] 마스터 파일이 존재하지 않습니다: {MST_PATH}")
         
         # 구글 시트 분석
         scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
