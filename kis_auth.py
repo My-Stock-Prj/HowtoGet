@@ -5,6 +5,12 @@ import logging
 import requests
 from google.oauth2 import service_account
 
+# 1. 클래스 상단(import 아래)에 추가
+class AttrDict(dict):
+    """딕셔너리 데이터를 dict.key 형태로 접근 가능하게 해주는 클래스"""
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
@@ -127,7 +133,8 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
         resp.isOK = lambda: resp.status_code == 200
         resp.printError = lambda *args, **kwargs: None 
         # [추가] getBody() 호출 시 json 데이터를 반환하도록 연결
-        resp.getBody = lambda: resp.json()
+        # [수정 핵심] json 데이터를 AttrDict로 감싸서 점(.) 표기법 지원
+        resp.getBody = lambda: AttrDict(resp.json())
         return resp
 
     except Exception as e:
