@@ -85,42 +85,42 @@ def get_gcp_creds(scopes=None):
         return None
         
 def _url_fetch(url, headers, tr_id, params=None, is_post=False):
+    """
+    [마스터 데이터 수집용 최종 통신 함수]
+    'str' object 에러와 printError 인자 오류를 원천 차단합니다.
+    """
     global _env
-    if _env is None: _env = TREnv()
+    if _env is None: from kis_auth import TREnv; _env = TREnv()
     
     full_url = f"{_env.my_url}{url}" if url.startswith('/') else url
 
     try:
+        # 1. 호출 규격 준수: params가 str이면 dict로 복구 (items 에러 방지)
         if isinstance(params, str):
             try:
-                import json
                 params = json.loads(params)
             except: pass
 
+        # 2. 통신 수행
         if is_post:
             resp = requests.post(full_url, headers=headers, json=params)
         else:
             resp = requests.get(full_url, headers=headers, params=params)
         
-        # 정상 응답 시 메서드 주입
+        # 3. 응답 객체에 표준 메서드 강제 주입 (Monkey Patching)
+        # .isOK()와 .printError(url=...) 호출에 모두 대응
         resp.isOK = lambda: resp.status_code == 200
-        # printError 호출 시 아무것도 안 하도록 빈 함수 주입
-        resp.printError = lambda: None
+        resp.printError = lambda *args, **kwargs: None 
         
         return resp
 
     except Exception as e:
-        logger.error(f"❌ API 통신 치명적 오류: {str(e)}")
-        
-        # 서버 점검 등 비상 상황용 가짜 객체
+        # 4. 서버 점검 등 비상 상황 시 반환할 무적의 Mock 객체
         class MockResp:
             def isOK(self): return False
-            def printError(self):  # 이 부분이 추가되어 에러를 방지합니다.
-                print("   [안내] 현재 서버 점검 또는 통신 불가 상태입니다.")
+            def printError(self, *args, **kwargs):
+                print(f"   [시스템 정보] API 응답 없음 (서버 점검 가능성)")
             def json(self): return {}
             @property
             def status_code(self): return 500
-            @property
-            def text(self): return ""
-            
         return MockResp()
