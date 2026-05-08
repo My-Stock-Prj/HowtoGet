@@ -91,7 +91,8 @@ def update_gsheet(df):
             worksheet = sh.add_worksheet(title='mst', rows='100', cols='10')
             
         worksheet.clear()
-        set_with_dataframe(worksheet, target_df)
+        # string_cols=['단축코드']를 추가하여 앞자리 0이 사라지지 않게 처리
+        set_with_dataframe(worksheet, target_df, string_cols=['단축코드'])
         print("구글 시트 'my' 파일의 'mst' 시트 업데이트 완료!")
         
     except Exception as e:
