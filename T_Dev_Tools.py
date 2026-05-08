@@ -89,9 +89,12 @@ def generate_repo_map():
                         row_count = len(df)
                         cols = ", ".join([f"`{c}`" for c in df.columns])
                         date_info = ""
+                        
+                        # [개선] 마스터 파일 여부 체크 및 날짜 분석 스킵 (Invalid date data "0" 에러 방지)
+                        is_master_file = "raw_mst" in item.lower()
                         date_cols = [c for c in df.columns if any(x in c for x in ['날짜', '일자'])]
                         
-                        if date_cols:
+                        if date_cols and not is_master_file:
                             target_col = date_cols[0]
                             # [완결성 체크] errors='raise'를 통해 잘못된 데이터(0 등) 발견 시 에러 발생
                             try:
@@ -103,6 +106,9 @@ def generate_repo_map():
                             except Exception as date_err:
                                 # 날짜 에러 발생 시 상세 메시지 포함하여 raise
                                 raise ValueError(f"Invalid date format in '{target_col}': {str(date_err)}")
+                        elif is_master_file:
+                            # 마스터 파일은 날짜 범위 분석 대신 라벨 표시
+                            date_info = " | 🏷️ `Master Data`"
                         
                         lines.append(f"  - **Stats**: `{row_count:,} rows`{date_info}")
                         lines.append(f"  - **Columns**: {cols}")
@@ -126,7 +132,7 @@ def generate_repo_map():
 
     with open(target_file, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-    print(f"✅ {target_file} 가 갱신되었습니다. (데이터 완결성 검증 포함)")
+    print(f"✅ {target_file} 가 갱신되었습니다. (파일명 주석 및 데이터 검증 포함)")
 
 if __name__ == "__main__":
     generate_repo_map()
