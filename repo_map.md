@@ -1,6 +1,6 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-08 09:38:56
-- **Status**: Debugging Enabled
+- **Generated Date**: 2026-05-08 09:46:33
+- **Status**: Strict Data Integrity Monitoring
 
 ---
 
@@ -19,7 +19,7 @@
 
 ## 📂 Directory: DB
 ### 📊 `raw_mst_krx_full.parquet`
-  - ⚠️ **Analysis Failed**: `time data "0" doesn't match format "%Y%m%d", at position 2017. You might want to try:`
+  - ❌ **DATA INTEGRITY ERROR**: `Invalid date format in '상장일자': time data "0" doesn't match format "%Y%m%d", at position 2017. You might want to try:`
 
 ## 📂 Directory: workflows
 ### ⚙️ `raw_master.yml` (Workflow)
