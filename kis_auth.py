@@ -83,3 +83,22 @@ def get_gcp_creds(scopes=None):
         return service_account.Credentials.from_service_account_info(creds_info, scopes=scopes)
     except:
         return None
+        
+def _url_fetch(url, headers, tr_id, params=None, is_post=False):
+    """
+    domestic_stock_functions.py에서 호출하는 실제 API 통신 함수입니다.
+    """
+    try:
+        if is_post:
+            res = requests.post(url, headers=headers, json=params)
+        else:
+            res = requests.get(url, headers=headers, params=params)
+        
+        if res.status_code == 200:
+            return res
+        else:
+            logger.error(f"API 호출 실패: {res.status_code} - {res.text}")
+            return res
+    except Exception as e:
+        logger.error(f"API 통신 오류: {str(e)}")
+        return None
