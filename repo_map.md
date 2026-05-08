@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-08 15:02:35
+- **Generated Date**: 2026-05-08 15:04:33
 - **Status**: Strict Data Integrity Monitoring
 
 ---
@@ -19,6 +19,138 @@
   - `parse_master(file_name, market_code)`
   - `update_gsheet(df)`
   - `build_raw_db()`
+### 📄 `domestic_stock_functions.py`
+  - `after_hour_balance(fid_input_price_1, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_rank_sort_cls_code, fid_div_cls_code, fid_input_iscd, fid_trgt_exls_cls_code, fid_trgt_cls_code, fid_vol_cnt, fid_input_price_2, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `bulk_trans_num(fid_aply_rang_prc_2, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_rank_sort_cls_code, fid_div_cls_code, fid_input_price_1, fid_aply_rang_prc_1, fid_input_iscd_2, fid_trgt_exls_cls_code, fid_trgt_cls_code, fid_vol_cnt, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `capture_uplowprice(fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_prc_cls_code, fid_div_cls_code, fid_input_iscd, fid_trgt_cls_code, fid_trgt_exls_cls_code, fid_input_price_1, fid_input_price_2, fid_vol_cnt)` - *국내주식 상하한가 포착 API입니다.*
+  - `chk_holiday(bass_dt, NK100, FK100, tr_cont, dataframe, depth, max_depth)` - *(★중요) 국내휴장일조회(TCA0903R) 서비스는 당사 원장서비스와 연관되어 있어 *
+  - `comp_interest(fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_div_cls_code, fid_div_cls_code1, dataframe1, dataframe2, tr_cont, depth, max_depth)` - *[국내주식] 업종/기타 *
+  - `comp_program_trade_daily(fid_cond_mrkt_div_code, fid_mrkt_cls_code, fid_input_date_1, fid_input_date_2)` - *프로그램매매 종합현황(일별) API입니다. *
+  - `comp_program_trade_today(fid_cond_mrkt_div_code, fid_mrkt_cls_code, fid_sctn_cls_code, fid_input_iscd, fid_cond_mrkt_div_code1, fid_input_hour_1)` - *프로그램매매 종합현황(시간) API입니다. *
+  - `credit_balance(fid_cond_scr_div_code, fid_input_iscd, fid_option, fid_cond_mrkt_div_code, fid_rank_sort_cls_code, dataframe1, dataframe2, tr_cont, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `credit_by_company(fid_rank_sort_cls_code, fid_slct_yn, fid_input_iscd, fid_cond_scr_div_code, fid_cond_mrkt_div_code, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `daily_credit_balance(fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_input_date_1, tr_cont, dataframe, depth, max_depth)` - *국내주식 신용잔고 일별추이 API입니다.*
+  - `daily_loan_trans(mrkt_div_cls_code, mksc_shrn_iscd, start_date, end_date, cts)` - *종목별 일별 대차거래추이 API입니다.*
+  - `daily_short_sale(fid_cond_mrkt_div_code, fid_input_iscd, fid_input_date_1, fid_input_date_2)` - *국내주식 공매도 일별추이를 조회합니다.*
+  - `disparity(fid_input_price_2, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_div_cls_code, fid_rank_sort_cls_code, fid_hour_cls_code, fid_input_iscd, fid_trgt_cls_code, fid_trgt_exls_cls_code, fid_input_price_1, fid_vol_cnt, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `dividend_rate(cts_area, gb1, upjong, gb2, gb3, f_dt, t_dt, gb4, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `estimate_perform(sht_cd, dataframe1, dataframe2, dataframe3, dataframe4, tr_cont, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `exp_closing_price(fid_cond_mrkt_div_code, fid_input_iscd, fid_rank_sort_cls_code, fid_cond_scr_div_code, fid_blng_cls_code)` - *국내주식 장마감 예상체결가 API입니다. *
+  - `exp_index_trend(fid_mkop_cls_code, fid_input_hour_1, fid_input_iscd, fid_cond_mrkt_div_code, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 업종/기타 *
+  - `exp_price_trend(fid_cond_mrkt_div_code, fid_input_iscd, fid_mkop_cls_code)` - *국내주식 예상체결가 추이 API입니다.*
+  - `exp_total_index(fid_mrkt_cls_code, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_mkop_cls_code, dataframe1, dataframe2, tr_cont, depth, max_depth)` - *[국내주식] 업종/기타 *
+  - `exp_trans_updown(fid_rank_sort_cls_code, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_div_cls_code, fid_aply_rang_prc_1, fid_vol_cnt, fid_pbmn, fid_blng_cls_code, fid_mkop_cls_code, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `finance_balance_sheet(fid_div_cls_code, fid_cond_mrkt_div_code, fid_input_iscd, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `finance_financial_ratio(fid_div_cls_code, fid_cond_mrkt_div_code, fid_input_iscd, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `finance_growth_ratio(fid_input_iscd, fid_div_cls_code, fid_cond_mrkt_div_code, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `finance_income_statement(fid_div_cls_code, fid_cond_mrkt_div_code, fid_input_iscd, tr_cont, dataframe, depth, max_depth)` - *국내주식 손익계산서 API를 호출하여 DataFrame으로 반환합니다.*
+  - `finance_other_major_ratios(fid_input_iscd, fid_div_cls_code, fid_cond_mrkt_div_code, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `finance_profit_ratio(fid_input_iscd, fid_div_cls_code, fid_cond_mrkt_div_code, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `finance_ratio(fid_trgt_cls_code, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_div_cls_code, fid_input_price_1, fid_input_price_2, fid_vol_cnt, fid_input_option_1, fid_input_option_2, fid_rank_sort_cls_code, fid_blng_cls_code, fid_trgt_exls_cls_code, tr_cont, dataframe)` - *[국내주식] 순위분석 *
+  - `finance_stability_ratio(fid_input_iscd, fid_div_cls_code, fid_cond_mrkt_div_code, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `fluctuation(fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_rank_sort_cls_code, fid_input_cnt_1, fid_prc_cls_code, fid_input_price_1, fid_input_price_2, fid_vol_cnt, fid_trgt_cls_code, fid_trgt_exls_cls_code, fid_div_cls_code, fid_rsfl_rate1, fid_rsfl_rate2, tr_cont, dataframe)` - *[국내주식] 순위분석*
+  - `foreign_institution_total(fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_div_cls_code, fid_rank_sort_cls_code, fid_etc_cls_code)` - *국내기관_외국인 매매종목가집계 API입니다.*
+  - `frgnmem_pchs_trend(fid_cond_mrkt_div_code, fid_input_iscd, fid_input_iscd_2)` - *종목별 외국계 순매수추이 API입니다.*
+  - `frgnmem_trade_estimate(fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_rank_sort_cls_code, fid_rank_sort_cls_code_2)` - *외국계 매매종목 가집계 API입니다.*
+  - `frgnmem_trade_trend(fid_cond_scr_div_code, fid_cond_mrkt_div_code, fid_input_iscd, fid_input_iscd_2, fid_mrkt_cls_code, fid_vol_cnt, dataframe1, dataframe2, tr_cont, depth, max_depth)` - *[국내주식] 시세분석 *
+  - `hts_top_view(tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `inquire_account_balance(cano, acnt_prdt_cd, inqr_dvsn_1, bspr_bf_dt_aply_yn)` - *투자계좌자산현황조회 API입니다.*
+  - `inquire_asking_price_exp_ccn(env_dv, fid_cond_mrkt_div_code, fid_input_iscd)` - *주식현재가 호가 예상체결 API입니다. 매수 매도 호가를 확인하실 수 있습니다. 실시간 데이터를 원하신다면 웹소켓 API를 활용하세요.*
+  - `inquire_balance(env_dv, cano, acnt_prdt_cd, afhr_flpr_yn, inqr_dvsn, unpr_dvsn, fund_sttl_icld_yn, fncg_amt_auto_rdpt_yn, prcs_dvsn, FK100, NK100, tr_cont, dataframe1, dataframe2, depth, max_depth)` - *주식 잔고조회 API입니다. *
+  - `inquire_balance_rlz_pl(cano, acnt_prdt_cd, afhr_flpr_yn, inqr_dvsn, unpr_dvsn, fund_sttl_icld_yn, fncg_amt_auto_rdpt_yn, prcs_dvsn, ofl_yn, cost_icld_yn, FK100, NK100, tr_cont, dataframe1, dataframe2, depth, max_depth)` - *주식잔고조회_실현손익 API입니다.*
+  - `inquire_ccnl(env_dv, fid_cond_mrkt_div_code, fid_input_iscd)` - *국내현재가 체결 API 입니다. 종목의 체결 정보를 확인할 수 있습니다.*
+  - `inquire_credit_psamount(cano, acnt_prdt_cd, pdno, ord_dvsn, crdt_type, cma_evlu_amt_icld_yn, ovrs_icld_yn, ord_unpr)` - *신용매수가능조회 API입니다.*
+  - `inquire_daily_ccld(env_dv, pd_dv, cano, acnt_prdt_cd, inqr_strt_dt, inqr_end_dt, sll_buy_dvsn_cd, ccld_dvsn, inqr_dvsn, inqr_dvsn_3, pdno, ord_gno_brno, odno, inqr_dvsn_1, FK100, NK100, tr_cont, excg_id_dvsn_cd, dataframe1, dataframe2, depth, max_depth)` - *주식일별주문체결조회 API입니다. *
+  - `inquire_daily_indexchartprice(fid_cond_mrkt_div_code, fid_input_iscd, fid_input_date_1, fid_input_date_2, fid_period_div_code, env_dv, dataframe1, dataframe2, tr_cont, depth, max_depth)` - *[국내주식] 업종/기타 *
+  - `inquire_daily_itemchartprice(env_dv, fid_cond_mrkt_div_code, fid_input_iscd, fid_input_date_1, fid_input_date_2, fid_period_div_code, fid_org_adj_prc)` - *국내주식기간별시세(일/주/월/년) API입니다.*
+  - `inquire_daily_overtimeprice(env_dv, fid_cond_mrkt_div_code, fid_input_iscd)` - *주식현재가 시간외일자별주가 API입니다.  (최근일 30건만 조회 가능)*
+  - `inquire_daily_price(env_dv, fid_cond_mrkt_div_code, fid_input_iscd, fid_period_div_code, fid_org_adj_prc)` - *주식현재가 일자별 API입니다. 일/주/월별 주가를 확인할 수 있으며 최근 30일(주,별)로 제한되어 있습니다.*
+  - `inquire_daily_trade_volume(fid_cond_mrkt_div_code, fid_input_iscd, fid_period_div_code, fid_input_date_1, fid_input_date_2)` - *종목별일별매수매도체결량 API입니다. 실전계좌의 경우, 한 번의 호출에 최대 100건까지 확인 가능합니다.*
+  - `inquire_elw_price(fid_cond_mrkt_div_code, fid_input_iscd, env_dv, tr_cont, dataframe, depth, max_depth)` - *[국내주식] ELW시세 *
+  - `inquire_index_category_price(fid_cond_mrkt_div_code, fid_input_iscd, fid_cond_scr_div_code, fid_mrkt_cls_code, fid_blng_cls_code, dataframe1, dataframe2, tr_cont, depth, max_depth)` - *[국내주식] 업종/기타 *
+  - `inquire_index_daily_price(fid_period_div_code, fid_cond_mrkt_div_code, fid_input_iscd, fid_input_date_1, dataframe1, dataframe2, tr_cont, depth, max_depth)` - *[국내주식] 업종/기타 *
+  - `inquire_index_price(fid_cond_mrkt_div_code, fid_input_iscd, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 업종/기타 *
+  - `inquire_index_tickprice(fid_input_iscd, fid_cond_mrkt_div_code, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 업종/기타 *
+  - `inquire_index_timeprice(fid_input_hour_1, fid_input_iscd, fid_cond_mrkt_div_code, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 업종/기타 *
+  - `inquire_investor(env_dv, fid_cond_mrkt_div_code, fid_input_iscd)` - *주식현재가 투자자 API입니다. 개인, 외국인, 기관 등 투자 정보를 확인할 수 있습니다.*
+  - `inquire_investor_daily_by_market(fid_cond_mrkt_div_code, fid_input_iscd, fid_input_date_1, fid_input_iscd_1, fid_input_date_2, fid_input_iscd_2)` - *시장별 투자자매매동향(일별) API입니다.*
+  - `inquire_investor_time_by_market(fid_input_iscd, fid_input_iscd_2)` - *시장별 투자자매매동향(시세성) API입니다.*
+  - `inquire_member(env_dv, fid_cond_mrkt_div_code, fid_input_iscd)` - *주식 현재가 회원사 API입니다. 회원사의 투자 정보를 확인할 수 있습니다.*
+  - `inquire_member_daily(fid_cond_mrkt_div_code, fid_input_iscd, fid_input_iscd_2, fid_input_date_1, fid_input_date_2, fid_sctn_cls_code)` - *주식현재가 회원사 종목매매동향 API입니다.*
+  - `inquire_overtime_asking_price(fid_cond_mrkt_div_code, fid_input_iscd)` - *국내주식 시간외호가 API입니다. *
+  - `inquire_overtime_price(fid_cond_mrkt_div_code, fid_input_iscd)` - *국내주식 시간외현재가 API입니다. *
+  - `inquire_period_profit(cano, acnt_prdt_cd, inqr_strt_dt, inqr_end_dt, sort_dvsn, inqr_dvsn, cblc_dvsn, pdno, NK100, FK100, tr_cont, dataframe1, dataframe2, depth, max_depth)` - *기간별손익일별합산조회 API입니다.*
+  - `inquire_period_trade_profit(cano, acnt_prdt_cd, sort_dvsn, inqr_strt_dt, inqr_end_dt, cblc_dvsn, pdno, NK100, FK100, tr_cont, dataframe1, dataframe2, depth, max_depth)` - *기간별매매손익현황조회 API입니다.*
+  - `inquire_price(env_dv, fid_cond_mrkt_div_code, fid_input_iscd)` - *주식 현재가 시세 API입니다. 실시간 시세를 원하신다면 웹소켓 API를 활용하세요.*
+  - `inquire_price_2(fid_cond_mrkt_div_code, fid_input_iscd)` - *주식현재가 시세2 API입니다.*
+  - `inquire_psbl_order(env_dv, cano, acnt_prdt_cd, pdno, ord_unpr, ord_dvsn, cma_evlu_amt_icld_yn, ovrs_icld_yn)` - *매수가능 조회 API입니다. *
+  - `inquire_psbl_rvsecncl(cano, acnt_prdt_cd, inqr_dvsn_1, inqr_dvsn_2, FK100, NK100, tr_cont, dataframe, depth, max_depth)` - *주식정정취소가능주문조회 API입니다. 한 번의 호출에 최대 50건까지 확인 가능하며, 이후의 값은 연속조회를 통해 확인하실 수 있습니다.*
+  - `inquire_psbl_sell(cano, acnt_prdt_cd, pdno, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 주문/계좌 *
+  - `inquire_time_dailychartprice(fid_cond_mrkt_div_code, fid_input_iscd, fid_input_hour_1, fid_input_date_1, fid_pw_data_incu_yn, fid_fake_tick_incu_yn)` - *주식일별분봉조회 API입니다. *
+  - `inquire_time_indexchartprice(fid_cond_mrkt_div_code, fid_etc_cls_code, fid_input_iscd, fid_input_hour_1, fid_pw_data_incu_yn, dataframe1, dataframe2, tr_cont, depth, max_depth)` - *[국내주식] 업종/기타 *
+  - `inquire_time_itemchartprice(env_dv, fid_cond_mrkt_div_code, fid_input_iscd, fid_input_hour_1, fid_pw_data_incu_yn, fid_etc_cls_code)` - *주식당일분봉조회 API입니다. *
+  - `inquire_time_itemconclusion(env_dv, fid_cond_mrkt_div_code, fid_input_iscd, fid_input_hour_1)` - *주식현재가 당일시간대별체결 API입니다.*
+  - `inquire_time_overtimeconclusion(env_dv, fid_cond_mrkt_div_code, fid_input_iscd, fid_hour_cls_code)` - *주식현재가 시간외시간별체결 API입니다.*
+  - `inquire_vi_status(fid_div_cls_code, fid_cond_scr_div_code, fid_mrkt_cls_code, fid_input_iscd, fid_rank_sort_cls_code, fid_input_date_1, fid_trgt_cls_code, fid_trgt_exls_cls_code, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 업종/기타 *
+  - `intgr_margin(cano, acnt_prdt_cd, cma_evlu_amt_icld_yn, wcrc_frcr_dvsn_cd, fwex_ctrt_frcr_dvsn_cd)` - *주식통합증거금 현황 API입니다.*
+  - `intstock_grouplist(type, fid_etc_cls_code, user_id)` - *관심종목 그룹조회 API입니다.*
+  - `intstock_multprice(fid_cond_mrkt_div_code_1, fid_input_iscd_1, fid_cond_mrkt_div_code_2, fid_input_iscd_2, fid_cond_mrkt_div_code_3, fid_input_iscd_3, fid_cond_mrkt_div_code_4, fid_input_iscd_4, fid_cond_mrkt_div_code_5, fid_input_iscd_5, fid_cond_mrkt_div_code_6, fid_input_iscd_6, fid_cond_mrkt_div_code_7, fid_input_iscd_7, fid_cond_mrkt_div_code_8, fid_input_iscd_8, fid_cond_mrkt_div_code_9, fid_input_iscd_9, fid_cond_mrkt_div_code_10, fid_input_iscd_10, fid_cond_mrkt_div_code_11, fid_input_iscd_11, fid_cond_mrkt_div_code_12, fid_input_iscd_12, fid_cond_mrkt_div_code_13, fid_input_iscd_13, fid_cond_mrkt_div_code_14, fid_input_iscd_14, fid_cond_mrkt_div_code_15, fid_input_iscd_15, fid_cond_mrkt_div_code_16, fid_input_iscd_16, fid_cond_mrkt_div_code_17, fid_input_iscd_17, fid_cond_mrkt_div_code_18, fid_input_iscd_18, fid_cond_mrkt_div_code_19, fid_input_iscd_19, fid_cond_mrkt_div_code_20, fid_input_iscd_20, fid_cond_mrkt_div_code_21, fid_input_iscd_21, fid_cond_mrkt_div_code_22, fid_input_iscd_22, fid_cond_mrkt_div_code_23, fid_input_iscd_23, fid_cond_mrkt_div_code_24, fid_input_iscd_24, fid_cond_mrkt_div_code_25, fid_input_iscd_25, fid_cond_mrkt_div_code_26, fid_input_iscd_26, fid_cond_mrkt_div_code_27, fid_input_iscd_27, fid_cond_mrkt_div_code_28, fid_input_iscd_28, fid_cond_mrkt_div_code_29, fid_input_iscd_29, fid_cond_mrkt_div_code_30, fid_input_iscd_30)` - *관심종목(멀티종목) 시세조회 API입니다.*
+  - `intstock_stocklist_by_group(type, user_id, inter_grp_code, fid_etc_cls_code, data_rank, inter_grp_name, hts_kor_isnm, cntg_cls_code)` - *관심종목 그룹별 종목조회 API입니다.*
+  - `invest_opbysec(fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_div_cls_code, fid_input_date_1, fid_input_date_2, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `invest_opinion(fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_input_date_1, fid_input_date_2, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `investor_program_trade_today(mrkt_div_cls_code)` - *프로그램매매 투자자매매동향(당일) API입니다.*
+  - `investor_trade_by_stock_daily(fid_cond_mrkt_div_code, fid_input_iscd, fid_input_date_1, fid_org_adj_prc, fid_etc_cls_code, dataframe1, dataframe2, tr_cont, depth, max_depth)` - *[국내주식] 시세분석 *
+  - `investor_trend_estimate(mksc_shrn_iscd)` - *국내주식 종목별 외국인, 기관 추정가집계 API입니다.*
+  - `ksdinfo_bonus_issue(cts, f_dt, t_dt, sht_cd, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `ksdinfo_cap_dcrs(cts, f_dt, t_dt, sht_cd, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `ksdinfo_dividend(cts, gb1, f_dt, t_dt, sht_cd, high_gb, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `ksdinfo_forfeit(sht_cd, t_dt, f_dt, cts, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `ksdinfo_list_info(sht_cd, t_dt, f_dt, cts, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `ksdinfo_mand_deposit(t_dt, sht_cd, f_dt, cts, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `ksdinfo_merger_split(cts, f_dt, t_dt, sht_cd, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `ksdinfo_paidin_capin(cts, gb1, f_dt, t_dt, sht_cd, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `ksdinfo_pub_offer(sht_cd, cts, f_dt, t_dt, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `ksdinfo_purreq(sht_cd, t_dt, f_dt, cts, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `ksdinfo_rev_split(sht_cd, cts, f_dt, t_dt, market_gb, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `ksdinfo_sharehld_meet(cts, f_dt, t_dt, sht_cd, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `lendable_by_company(excg_dvsn_cd, pdno, thco_stln_psbl_yn, inqr_dvsn_1, ctx_area_fk200, ctx_area_nk100, dataframe1, dataframe2, tr_cont, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `market_cap(fid_input_price_2, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_div_cls_code, fid_input_iscd, fid_trgt_cls_code, fid_trgt_exls_cls_code, fid_input_price_1, fid_vol_cnt, tr_cont, dataframe)` - *[국내주식] 순위분석 *
+  - `market_time()` - *국내선물 영업일조회 API입니다.*
+  - `market_value(fid_trgt_cls_code, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_div_cls_code, fid_input_price_1, fid_input_price_2, fid_vol_cnt, fid_input_option_1, fid_input_option_2, fid_rank_sort_cls_code, fid_blng_cls_code, fid_trgt_exls_cls_code, tr_cont, dataframe)` - *[국내주식] 순위분석 *
+  - `mktfunds(fid_input_date_1)` - *국내 증시자금 종합 API입니다. *
+  - `near_new_highlow(fid_aply_rang_vol, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_div_cls_code, fid_input_cnt_1, fid_input_cnt_2, fid_prc_cls_code, fid_input_iscd, fid_trgt_cls_code, fid_trgt_exls_cls_code, fid_aply_rang_prc_1, fid_aply_rang_prc_2, tr_cont, dataframe)` - *[국내주식] 순위분석 *
+  - `news_title(fid_news_ofer_entp_code, fid_cond_mrkt_cls_code, fid_input_iscd, fid_titl_cntt, fid_input_date_1, fid_input_hour_1, fid_rank_sort_cls_code, fid_input_srno, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 업종/기타 *
+  - `order_cash(env_dv, ord_dv, cano, acnt_prdt_cd, pdno, ord_dvsn, ord_qty, ord_unpr, excg_id_dvsn_cd, sll_type, cndt_pric)` - *국내주식주문(현금) API 입니다.*
+  - `order_credit(ord_dv, cano, acnt_prdt_cd, pdno, crdt_type, loan_dt, ord_dvsn, ord_qty, ord_unpr, excg_id_dvsn_cd, sll_type, rsvn_ord_yn, emgc_ord_yn, pgtr_dvsn, mgco_aptm_odno, lqty_tr_ngtn_dtl_no, lqty_tr_agmt_no, lqty_tr_ngtn_id, lp_ord_yn, mdia_odno, ord_svr_dvsn_cd, pgm_nmpr_stmt_dvsn_cd, cvrg_slct_rson_cd, cvrg_seq, cndt_pric)` - *국내주식주문(신용) API입니다. *
+  - `order_resv(cano, acnt_prdt_cd, pdno, ord_qty, ord_unpr, sll_buy_dvsn_cd, ord_dvsn_cd, ord_objt_cblc_dvsn_cd, loan_dt, rsvn_ord_end_dt, ldng_dt)` - *국내주식 예약주문 매수/매도 API 입니다.*
+  - `order_resv_ccnl(rsvn_ord_ord_dt, rsvn_ord_end_dt, tmnl_mdia_kind_cd, cano, acnt_prdt_cd, prcs_dvsn_cd, cncl_yn, rsvn_ord_seq, pdno, sll_buy_dvsn_cd, FK200, NK200, tr_cont, dataframe, depth, max_depth)` - *국내예약주문 처리내역 조회 API 입니다.*
+  - `order_resv_rvsecncl(cano, acnt_prdt_cd, rsvn_ord_seq, rsvn_ord_orgno, rsvn_ord_ord_dt, ord_type, pdno, ord_qty, ord_unpr, sll_buy_dvsn_cd, ord_dvsn_cd, ord_objt_cblc_dvsn_cd, loan_dt, rsvn_ord_end_dt, ctal_tlno)` - *국내주식 예약주문 정정/취소 API 입니다.*
+  - `order_rvsecncl(env_dv, cano, acnt_prdt_cd, krx_fwdg_ord_orgno, orgn_odno, ord_dvsn, rvse_cncl_dvsn_cd, ord_qty, ord_unpr, qty_all_ord_yn, excg_id_dvsn_cd, cndt_pric)` - *주문 건에 대하여 정정 및 취소하는 API입니다. 단, 이미 체결된 건은 정정 및 취소가 불가합니다.*
+  - `overtime_exp_trans_fluct(fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_rank_sort_cls_code, fid_div_cls_code, fid_input_price_1, fid_input_price_2, fid_input_vol_1)` - *국내주식 시간외예상체결등락률 API입니다. *
+  - `overtime_fluctuation(fid_cond_mrkt_div_code, fid_mrkt_cls_code, fid_cond_scr_div_code, fid_input_iscd, fid_div_cls_code, fid_input_price_1, fid_input_price_2, fid_vol_cnt, fid_trgt_cls_code, fid_trgt_exls_cls_code, dataframe1, dataframe2, tr_cont, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `overtime_volume(fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_rank_sort_cls_code, fid_input_price_1, fid_input_price_2, fid_vol_cnt, fid_trgt_cls_code, fid_trgt_exls_cls_code, dataframe1, dataframe2, tr_cont, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `pbar_tratio(fid_cond_mrkt_div_code, fid_input_iscd, fid_cond_scr_div_code, fid_input_hour_1)` - *국내주식 매물대/거래비중 API입니다.*
+  - `pension_inquire_balance(cano, acnt_prdt_cd, acca_dvsn_cd, inqr_dvsn, FK100, NK100, tr_cont, dataframe1, dataframe2, depth, max_depth)` - *주식, ETF, ETN만 조회 가능하며 펀드는 조회 불가합니다.*
+  - `pension_inquire_daily_ccld(cano, acnt_prdt_cd, user_dvsn_cd, sll_buy_dvsn_cd, ccld_nccs_dvsn, inqr_dvsn_3, FK100, NK100, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 주문/계좌 > 퇴직연금 미체결내역[v1_국내주식-033]*
+  - `pension_inquire_deposit(cano, acnt_prdt_cd, acca_dvsn_cd)` - *​※ 55번 계좌(DC가입자계좌)의 경우 해당 API 이용이 불가합니다.*
+  - `pension_inquire_present_balance(cano, acnt_prdt_cd, user_dvsn_cd, FK100, NK100)` - *[국내주식] 주문/계좌 > 퇴직연금 체결기준잔고[v1_국내주식-032]*
+  - `pension_inquire_psbl_order(cano, acnt_prdt_cd, pdno, acca_dvsn_cd, cma_evlu_amt_icld_yn, ord_unpr, ord_dvsn)` - *[국내주식] 주문/계좌 > 퇴직연금 매수가능조회[v1_국내주식-034]*
+  - `period_rights(inqr_dvsn, cano, acnt_prdt_cd, inqr_strt_dt, inqr_end_dt, cust_rncno25, hmid, rght_type_cd, pdno, prdt_type_cd, NK100, FK100, tr_cont, dataframe, depth, max_depth)` - *기간별계좌권리현황조회 API입니다.*
+  - `prefer_disparate_ratio(fid_vol_cnt, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_div_cls_code, fid_input_iscd, fid_trgt_cls_code, fid_trgt_exls_cls_code, fid_input_price_1, fid_input_price_2, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `profit_asset_index(fid_cond_mrkt_div_code, fid_trgt_cls_code, fid_cond_scr_div_code, fid_input_iscd, fid_div_cls_code, fid_input_price_1, fid_input_price_2, fid_vol_cnt, fid_input_option_1, fid_input_option_2, fid_rank_sort_cls_code, fid_blng_cls_code, fid_trgt_exls_cls_code, tr_cont, dataframe)` - *[국내주식] 순위분석 *
+  - `program_trade_by_stock(fid_cond_mrkt_div_code, fid_input_iscd)` - *국내주식 종목별 프로그램매매추이(체결) API입니다.*
+  - `program_trade_by_stock_daily(fid_cond_mrkt_div_code, fid_input_iscd, fid_input_date_1)` - *국내주식 종목별 프로그램매매추이(일별) API입니다.*
+  - `psearch_result(user_id, seq)` - *HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API입니다.*
+  - `psearch_title(user_id)` - *[국내주식] 시세분석 > 종목조건검색 목록조회[국내주식-038]*
+  - `quote_balance(fid_vol_cnt, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_rank_sort_cls_code, fid_div_cls_code, fid_trgt_cls_code, fid_trgt_exls_cls_code, fid_input_price_1, fid_input_price_2, tr_cont, dataframe)` - *[국내주식] 순위분석 *
+  - `search_info(pdno, prdt_type_cd, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `search_stock_info(prdt_type_cd, pdno, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 종목정보 *
+  - `short_sale(fid_aply_rang_vol, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_period_div_code, fid_input_cnt_1, fid_trgt_exls_cls_code, fid_trgt_cls_code, fid_aply_rang_prc_1, fid_aply_rang_prc_2, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `top_interest_stock(fid_input_iscd_2, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_trgt_cls_code, fid_trgt_exls_cls_code, fid_input_price_1, fid_input_price_2, fid_vol_cnt, fid_div_cls_code, fid_input_cnt_1, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `traded_by_company(fid_trgt_exls_cls_code, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_div_cls_code, fid_rank_sort_cls_code, fid_input_date_1, fid_input_date_2, fid_input_iscd, fid_trgt_cls_code, fid_aply_rang_vol, fid_aply_rang_prc_2, fid_aply_rang_prc_1, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `tradprt_byamt(fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd)` - *국내주식 체결금액별 매매비중 API입니다.*
+  - `volume_power(fid_trgt_exls_cls_code, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_div_cls_code, fid_input_price_1, fid_input_price_2, fid_vol_cnt, fid_trgt_cls_code, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
+  - `volume_rank(fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_div_cls_code, fid_blng_cls_code, fid_trgt_cls_code, fid_trgt_exls_cls_code, fid_input_price_1, fid_input_price_2, fid_vol_cnt, fid_input_date_1, tr_cont, dataframe)` - *[국내주식] 순위분석*
 ### 📄 `kis_auth.py`
   - `getEnv()` - *auth_functions.py와의 호환성을 위한 서버 주소 반환*
   - `getTREnv()`
