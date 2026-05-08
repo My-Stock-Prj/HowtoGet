@@ -48,19 +48,14 @@ def get_combined_targets():
 
 def fetch_daily_price(ticker, target_date):
     try:
-        # GEMS 지식 가이드 규격: env_dv, 시장분류, 종목코드, 시작일, 종료일, 기간, 수정주가여부
+        # GEMS 표준 함수 호출 (일봉 조회 TR: FHKST03010100)
         df_res = inquire_daily_itemchartprice(
-            "real",         # env_dv (실전투자)
-            "J",            # FID_COND_MRKT_DIV_CODE (주식)
-            ticker,         # FID_INPUT_ISCD (종목코드)
-            target_date,    # FID_INPUT_DATE_1 (시작일)
-            target_date,    # FID_INPUT_DATE_2 (종료일)
-            "D",            # FID_PERIOD_DIV_CODE (일봉)
-            "1"             # FID_ORG_ADJ_PRC (수정주가)
+            "real", "J", ticker, target_date, target_date, "D", "1"
         )
 
         if df_res is not None and not df_res.empty:
             d = df_res.iloc[0]
+            
             return {
                 "날짜": target_date, 
                 "종목코드": ticker,
@@ -70,11 +65,11 @@ def fetch_daily_price(ticker, target_date):
                 "종가": int(d['stck_clpr']),
                 "거래량": int(d['acml_vol']), 
                 "거래대금": int(d['acml_tr_pbmn']),
-                "전일대비등락률": float(d.get('prdy_ctrt', 0)),
-                "전일대비거래량": int(d.get('prdy_vrss_vol', 0))
+                "재평가사유": d.get('revl_issu_reas', ''), # 락 구분 등 필수 메타데이터
+                "전일대비거래량": int(d.get('prdy_vrss_vol', 0)) # 거래량 변화 분석용
             }
     except Exception as e:
-        print(f"⚠️ [{ticker}] 데이터 처리 오류: {str(e)}")
+        print(f"⚠️ [{ticker}] 마스터 데이터 추출 실패: {str(e)}")
     return None
 
 def main():
