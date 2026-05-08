@@ -59,7 +59,7 @@ def fetch_daily_price(ticker, target_date):
             FID_INPUT_DATE_1=target_date, 
             FID_INPUT_DATE_2=target_date, 
             FID_PERIOD_DIV_CODE="D", 
-            FID_ORG_ADJ_PRC="0"
+            FID_ORG_ADJ_PRC="1"
         )[cite: 2]
 
         if df_res is not None and not df_res.empty:
