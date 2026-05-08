@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-08 17:23:26
+- **Generated Date**: 2026-05-08 17:25:26
 - **Status**: Strict Data Integrity Monitoring
 
 ---
@@ -10,10 +10,7 @@
   - `fetch_daily_price(ticker, target_date)`
   - `main()`
 ### 📄 `build_raw_master.py`
-  - `download_master(market_type)`
-  - `parse_master(file_name, market_code)`
-  - `update_gsheet(df)`
-  - `build_raw_db()`
+  - *No public functions*
 ### 📄 `domestic_stock_functions.py`
   - `after_hour_balance(fid_input_price_1, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_rank_sort_cls_code, fid_div_cls_code, fid_input_iscd, fid_trgt_exls_cls_code, fid_trgt_cls_code, fid_vol_cnt, fid_input_price_2, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
   - `bulk_trans_num(fid_aply_rang_prc_2, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_rank_sort_cls_code, fid_div_cls_code, fid_input_price_1, fid_aply_rang_prc_1, fid_input_iscd_2, fid_trgt_exls_cls_code, fid_trgt_cls_code, fid_vol_cnt, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
