@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-08 13:12:04
+- **Generated Date**: 2026-05-08 13:22:11
 - **Status**: Strict Data Integrity Monitoring
 
 ---
@@ -15,11 +15,10 @@
   - `update_gsheet(df)`
   - `build_raw_db()`
 ### 📄 `kis_auth.py`
-  - `getEnv()` - *서버 주소 정보 반환*
-  - `getTREnv()` - *현재 설정된 환경 객체 반환*
-  - `auth()` - *KIS 인증 실행: 매번 새로 발급 (1번 원칙: 옵션 A)*
-  - `get_gcp_creds(scopes)` - *GCP 크리덴셜 객체 생성 (3번 원칙)*
-  - `set_order_hash(headers, data)` - *주문 해시값 설정 (기존 기능 유지)*
+  - `getEnv()` - *auth_functions.py와의 호환성을 위한 서버 주소 반환*
+  - `getTREnv()`
+  - `auth()` - *[수정 핵심] 인증 성공 시 반드시 결과를 리턴합니다.*
+  - `get_gcp_creds(scopes)`
 
 ## 📂 Directory: DB
 ### 📊 `raw_mst_krx_full.parquet`
