@@ -1,10 +1,14 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-08 09:59:31
+- **Generated Date**: 2026-05-08 10:26:07
 - **Status**: Strict Data Integrity Monitoring
 
 ---
 
 ## 📂 Directory: Root
+### 📄 `build_raw_PQ.py`
+  - `get_combined_targets()` - *저장 대상 종목 확정: KOSPI200/KOSDAQ150 + 구글시트 'goingup'*
+  - `fetch_daily_price(ticker, target_date, token, app_key, app_secret)` - *TR FHKST03010100 (국내주식 기간별 시세) 호출*
+  - `main()`
 ### 📄 `build_raw_master.py`
   - `download_master(market_type)`
   - `parse_master(file_name, market_code)`
