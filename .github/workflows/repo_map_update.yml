@@ -1,3 +1,4 @@
+# 이 코드는 repo_map_update.yml
 name: KIS-Manual-Run
 
 # 실행 조건: 사용자가 버튼을 직접 누를 때만 실행
