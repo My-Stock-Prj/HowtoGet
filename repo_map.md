@@ -1,14 +1,12 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-08 13:22:11
+- **Generated Date**: 2026-05-08 13:47:02
 - **Status**: Strict Data Integrity Monitoring
 
 ---
 
 ## 📂 Directory: Root
 ### 📄 `build_raw_PQ.py`
-  - `get_combined_targets()` - *저장 대상 종목 확정*
-  - `fetch_daily_price(ticker, target_date, token, app_key, app_secret)` - *API 호출 부분 (이전과 동일하나 안전장치 추가)*
-  - `main()`
+  - *No public functions*
 ### 📄 `build_raw_master.py`
   - `download_master(market_type)`
   - `parse_master(file_name, market_code)`
