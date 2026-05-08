@@ -53,10 +53,10 @@ def fetch_daily_price(ticker, target_date):
             "real", "J", ticker, target_date, target_date, "D", "1"
         )
 
-        # 1. 튜플에서 데이터프레임만 분리
+        # 1. 튜플에서 데이터프레임만 분리 (표준 규격 대응)
         df_res = result[0] if isinstance(result, tuple) else result
 
-        # 2. 이제 df_res는 DataFrame이므로 .empty 사용 가능
+        # 2. 마스터 데이터 규격에 맞춘 순수 시세 추출 (가공 필드 제외)
         if df_res is not None and not df_res.empty:
             d = df_res.iloc[0]
             
