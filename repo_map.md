@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-08 18:22:32
+- **Generated Date**: 2026-05-08 18:25:46
 - **Status**: Strict Data Integrity Monitoring
 
 ---
@@ -148,6 +148,7 @@
   - `getTREnv()`
   - `auth()` - *[수정 핵심] 인증 성공 시 반드시 결과를 리턴합니다.*
   - `get_gcp_creds(scopes)`
+  - `get_stock_base_info(stock_code)` - *주식기본조회 (CTPF1101R) 호출 함수*
   - `_url_fetch(url, headers, tr_id, params, is_post)`
   - `isOK(self)`
   - `printError(self)`
