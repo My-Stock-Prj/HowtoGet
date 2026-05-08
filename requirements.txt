@@ -4,6 +4,7 @@ numpy
 
 # Parquet 파일 처리를 위한 엔진 (엔진 하나만 확실히 지정)
 pyarrow
+fastparquet
 
 # 구글 시트 연동 (에러 해결을 위해 버전을 명시)
 gspread
