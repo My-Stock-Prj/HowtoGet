@@ -13,3 +13,6 @@ gspread-dataframe>=3.3.0
 
 # 엑셀 파일 저장용 (df.to_excel 사용 시 필수)
 openpyxl
+
+# API 통신
+requests
