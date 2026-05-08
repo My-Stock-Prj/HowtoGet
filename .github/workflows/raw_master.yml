@@ -29,7 +29,6 @@ jobs:
         env:
           # 시크릿 이름을 GCP_CREDENTIALS로 변경
           GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
-          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         run: python build_raw_master.py
 
       - name: Commit and Push changes
