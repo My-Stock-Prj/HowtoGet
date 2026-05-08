@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-08 15:09:41
+- **Generated Date**: 2026-05-08 15:13:47
 - **Status**: Strict Data Integrity Monitoring
 
 ---
@@ -156,6 +156,7 @@
   - `getTREnv()`
   - `auth()` - *[수정 핵심] 인증 성공 시 반드시 결과를 리턴합니다.*
   - `get_gcp_creds(scopes)`
+  - `_url_fetch(url, headers, tr_id, params, is_post)` - *domestic_stock_functions.py에서 호출하는 실제 API 통신 함수입니다.*
 
 ## 📂 Directory: DB
 ### 📊 `raw_mst_krx_full.parquet`
