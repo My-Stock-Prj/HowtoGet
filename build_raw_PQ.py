@@ -48,7 +48,7 @@ def get_combined_targets():
 
 def fetch_daily_price(ticker, target_date):
     try:
-        # GEMS 표준 함수 호출 (일봉 조회 TR: FHKST03010100)
+        # GEMS 표준 함수 호출
         df_res = inquire_daily_itemchartprice(
             "real", "J", ticker, target_date, target_date, "D", "1"
         )
@@ -56,6 +56,7 @@ def fetch_daily_price(ticker, target_date):
         if df_res is not None and not df_res.empty:
             d = df_res.iloc[0]
             
+            # 순수 마스터 데이터셋 (가공 필드 완전 제거)
             return {
                 "날짜": target_date, 
                 "종목코드": ticker,
@@ -65,11 +66,10 @@ def fetch_daily_price(ticker, target_date):
                 "종가": int(d['stck_clpr']),
                 "거래량": int(d['acml_vol']), 
                 "거래대금": int(d['acml_tr_pbmn']),
-                "재평가사유": d.get('revl_issu_reas', ''), # 락 구분 등 필수 메타데이터
-                "전일대비거래량": int(d.get('prdy_vrss_vol', 0)) # 거래량 변화 분석용
+                "재평가사유": d.get('revl_issu_reas', '')
             }
     except Exception as e:
-        print(f"⚠️ [{ticker}] 마스터 데이터 추출 실패: {str(e)}")
+        print(f"⚠️ [{ticker}] 마스터 추출 실패: {str(e)}")
     return None
 
 def main():
