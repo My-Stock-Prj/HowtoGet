@@ -1,0 +1,51 @@
+# 이 코드의 이름은 raw_PQ_run.yml
+name: raw_daily_PQ
+
+on:
+  workflow_dispatch: # 수동 실행
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # pandas, pyarrow, gspread, requests 등이 requirements.txt에 포함되어 있어야 합니다.
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Build Daily Price PQ
+        env:
+          # KIS API 인증용 시크릿
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          # 구글 시트 인증용 시크릿 (사용자님 설정에 맞춤)
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+          DATA_BASE_DIR: ./DB
+        run: python build_raw_PQ.py
+
+      - name: Verify Data Integrity
+        env:
+          DATA_BASE_DIR: ./DB
+        run: python T_Dev_Tools.py # 생성된 데이터의 완결성을 즉시 검증하고 repo_map.md 갱신
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          # 새롭게 생성/업데이트된 데이터 파일과 리포트 지도를 함께 커밋
+          git add DB/raw_daily_PQ.parquet repo_map.md
+          git commit -m "Update Daily Price PQ and Repo Map: $(date +'%Y-%m-%d')" || echo "No changes to commit"
+          git push
