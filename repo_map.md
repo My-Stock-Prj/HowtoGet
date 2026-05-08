@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-08 17:28:10
+- **Generated Date**: 2026-05-08 17:30:48
 - **Status**: Strict Data Integrity Monitoring
 
 ---
@@ -156,7 +156,7 @@
 
 ## 📂 Directory: DB
 ### 📊 `raw_daily_PQ.parquet`
-  - **Stats**: `3 rows` | 📅 `2026-05-04 ~ 2026-05-04`
+  - **Stats**: `153 rows` | 📅 `2026-05-04 ~ 2026-05-04`
   - **Columns**: `날짜`, `종목코드`, `시가`, `고가`, `저가`, `종가`, `거래량`, `거래대금`, `재평가사유`
 ### 📊 `raw_mst_krx_full.parquet`
   - **Stats**: `3,821 rows` | 🏷️ `Master Data`
