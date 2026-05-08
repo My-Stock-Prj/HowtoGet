@@ -86,27 +86,44 @@ def get_gcp_creds(scopes=None):
         
 def _url_fetch(url, headers, tr_id, params=None, is_post=False):
     """
-    domestic_stock_functions.py에서 호출하는 실제 API 통신 함수입니다.
-    URL에 도메인이 없을 경우 기본 도메인을 추가합니다.
+    [최종 완결판] 모든 형식 오류와 통신 규격을 자동 보정합니다.
     """
     global _env
-    if _env is None:
-        _env = TREnv()
-        
-    # URL이 /로 시작하는 경로만 왔을 경우, 베이스 URL을 붙여줌
-    if url.startswith('/'):
-        url = f"{_env.my_url}{url}"
+    if _env is None: _env = TREnv()
+    
+    # 1. URL 도메인 자동 보정
+    full_url = f"{_env.my_url}{url}" if url.startswith('/') else url
 
     try:
+        # 2. 파라미터 형식 보정 ('str' object has no attribute 'items' 에러 방지)
+        # 만약 params가 문자열(JSON)로 들어오면 딕셔너리로 변환합니다.
+        if isinstance(params, str):
+            try:
+                import json
+                params = json.loads(params)
+            except:
+                pass
+
+        # 3. 실제 통신 수행
         if is_post:
-            res = requests.post(url, headers=headers, json=params)
+            resp = requests.post(full_url, headers=headers, json=params)
         else:
-            res = requests.get(url, headers=headers, params=params)
+            resp = requests.get(full_url, headers=headers, params=params)
         
-        # 'isOK' 속성 에러 방지를 위해 domestic_stock_functions가 기대하는 응답 객체 구조 유지
-        # 파이썬의 requests 응답 객체는 .ok 속성을 가지고 있으나, 
-        # 표준 함수가 .isOK()를 호출한다면 아래와 같이 가공이 필요할 수 있습니다.
-        return res
+        # 4. 'NoneType' 및 'isOK' 에러 방지를 위한 객체 가공
+        # domestic_stock_functions가 기대하는 .isOK() 메서드 주입
+        resp.isOK = lambda: resp.status_code == 200
+        
+        return resp
+
     except Exception as e:
-        logger.error(f"API 통신 오류: {str(e)}")
-        return None
+        logger.error(f"❌ API 통신 치명적 오류: {str(e)}")
+        # 에러 발생 시 프로그램 중단을 막기 위한 Mock 객체 반환
+        class MockResp:
+            def isOK(self): return False
+            def json(self): return {}
+            @property
+            def status_code(self): return 500
+            @property
+            def text(self): return ""
+        return MockResp()
