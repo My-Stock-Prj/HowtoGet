@@ -58,19 +58,17 @@ def parse_master(file_name, market_code):
     for f in [tmp1, tmp2, file_name]: os.remove(f)
     return full_df
 
-# 3. 구글 시트 업데이트 함수 (kis_auth 활용 구조)
+# 3. 구글 시트 업데이트 함수 (파일명 'my' 기반 접근으로 수정)
 def update_gsheet(df):
     try:
-        print("구글 시트 업데이트 시작 (인증: kis_auth 기준)...")
+        print("구글 시트 업데이트 시작 (파일명: 'my', 시트명: 'mst')...")
         target_df = df[['단축코드', '종목명', '시장구분']].copy()
         
-        # 💡 완벽주의 팁: kis_auth에서 인증 정보를 가져오거나 
-        # 직접 GCP_CREDENTIALS 환경 변수를 통해 인증 객체를 생성합니다.
+        # GCP_CREDENTIALS 환경 변수를 통해 인증 객체 생성
         creds_json = os.environ.get('GCP_CREDENTIALS')
-        sheet_id = os.environ.get('GOOGLE_SHEET_ID')
         
-        if not creds_json or not sheet_id:
-            print("인증 정보(GCP_CREDENTIALS/GOOGLE_SHEET_ID)가 없어 중단합니다.")
+        if not creds_json:
+            print("인증 정보(GCP_CREDENTIALS)가 없어 중단합니다.")
             return
 
         scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
@@ -78,7 +76,15 @@ def update_gsheet(df):
         creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
         gc = gspread.authorize(creds)
         
-        sh = gc.open_by_key(sheet_id)
+        # 파일명 'my'로 직접 열기
+        try:
+            sh = gc.open('my')
+        except gspread.exceptions.SpreadsheetNotFound:
+            print("에러: 'my'라는 이름의 구글 시트 파일을 찾을 수 없습니다.")
+            print("서비스 계정 이메일이 해당 시트에 '편집자'로 공유되어 있는지 확인하세요.")
+            return
+
+        # 'mst' 시트 열기
         try:
             worksheet = sh.worksheet('mst')
         except gspread.exceptions.WorksheetNotFound:
