@@ -1,3 +1,4 @@
+# 이 코드는 build_raw_PQ.py
 # -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
@@ -47,18 +48,18 @@ def get_combined_targets():
 
 def fetch_daily_price(ticker, target_date):
     """
-    지식 베이스의 표준 함수를 활용하여 데이터를 수집합니다.[cite: 2]
+    지식 베이스의 표준 함수를 활용하여 데이터를 수집합니다.
     """
     try:
-        # 표준 함수 호출 (env_dv는 실전/모의에 따라 "real" 또는 "test" 설정)
+        # 오류 수정: 인자명을 지식 문서에 정의된 대문자(FID_...)로 변경함
         df_res = inquire_daily_itemchartprice(
             env_dv="real", 
-            fid_cond_mrkt_div_code="J", 
-            fid_input_iscd=ticker, 
-            fid_input_date_1=target_date, 
-            fid_input_date_2=target_date, 
-            fid_period_div_code="D", 
-            fid_org_adj_prc="0"
+            FID_COND_MRKT_DIV_CODE="J", 
+            FID_INPUT_ISCD=ticker, 
+            FID_INPUT_DATE_1=target_date, 
+            FID_INPUT_DATE_2=target_date, 
+            FID_PERIOD_DIV_CODE="D", 
+            FID_ORG_ADJ_PRC="0"
         )[cite: 2]
 
         if df_res is not None and not df_res.empty:
