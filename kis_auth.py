@@ -85,45 +85,42 @@ def get_gcp_creds(scopes=None):
         return None
         
 def _url_fetch(url, headers, tr_id, params=None, is_post=False):
-    """
-    [최종 완결판] 모든 형식 오류와 통신 규격을 자동 보정합니다.
-    """
     global _env
     if _env is None: _env = TREnv()
     
-    # 1. URL 도메인 자동 보정
     full_url = f"{_env.my_url}{url}" if url.startswith('/') else url
 
     try:
-        # 2. 파라미터 형식 보정 ('str' object has no attribute 'items' 에러 방지)
-        # 만약 params가 문자열(JSON)로 들어오면 딕셔너리로 변환합니다.
         if isinstance(params, str):
             try:
                 import json
                 params = json.loads(params)
-            except:
-                pass
+            except: pass
 
-        # 3. 실제 통신 수행
         if is_post:
             resp = requests.post(full_url, headers=headers, json=params)
         else:
             resp = requests.get(full_url, headers=headers, params=params)
         
-        # 4. 'NoneType' 및 'isOK' 에러 방지를 위한 객체 가공
-        # domestic_stock_functions가 기대하는 .isOK() 메서드 주입
+        # 정상 응답 시 메서드 주입
         resp.isOK = lambda: resp.status_code == 200
+        # printError 호출 시 아무것도 안 하도록 빈 함수 주입
+        resp.printError = lambda: None
         
         return resp
 
     except Exception as e:
         logger.error(f"❌ API 통신 치명적 오류: {str(e)}")
-        # 에러 발생 시 프로그램 중단을 막기 위한 Mock 객체 반환
+        
+        # 서버 점검 등 비상 상황용 가짜 객체
         class MockResp:
             def isOK(self): return False
+            def printError(self):  # 이 부분이 추가되어 에러를 방지합니다.
+                print("   [안내] 현재 서버 점검 또는 통신 불가 상태입니다.")
             def json(self): return {}
             @property
             def status_code(self): return 500
             @property
             def text(self): return ""
+            
         return MockResp()
