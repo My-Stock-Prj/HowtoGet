@@ -90,35 +90,39 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
     
     full_url = f"{_env.my_url}{url}" if url.startswith('/') else url
 
+    # 1. 헤더 규격 강제 교정 (문자열 에러 원천 차단)
+    # headers가 문자열이거나 None이면 새 딕셔너리로 교체
+    if not isinstance(headers, dict):
+        headers = {}
+
+    # 2. 필수 인증 정보 강제 주입
+    headers["Content-Type"] = "application/json"
+    headers["authorization"] = f"Bearer {_env.access_token}"
+    headers["appkey"] = _env.my_app
+    headers["appsecret"] = _env.my_sec
+    headers["tr_id"] = tr_id if tr_id else "FHKST03010100" # TR_ID 누락 방어
+    headers["custtype"] = "P"
+
     # [DEBUG] 보낼 데이터 확인
     print(f"\n📡 [DEBUG SEND] URL: {full_url}")
-    print(f"📡 [DEBUG SEND] TR_ID: {tr_id}")
+    print(f"📡 [DEBUG SEND] TR_ID: {headers['tr_id']}")
     
     try:
+        # params 규격 교정
         if isinstance(params, str):
             try: params = json.loads(params)
             except: pass
 
-        # 통신 수행
+        # 3. 통신 수행
         if is_post:
             resp = requests.post(full_url, headers=headers, json=params)
         else:
             resp = requests.get(full_url, headers=headers, params=params)
         
-        # ---------------------------------------------------------
-        # [DEBUG] 서버 회신 값 그대로 출력 (핵심 디버깅 구간)
-        # ---------------------------------------------------------
+        # [DEBUG RECV] 응답 확인
         print(f"📥 [DEBUG RECV] Status Code: {resp.status_code}")
-        print(f"📥 [DEBUG RECV] Response Headers: {dict(resp.headers)}")
-        
-        try:
-            # 정상적인 JSON 응답인 경우
-            print(f"📥 [DEBUG RECV] Body(JSON): {json.dumps(resp.json(), indent=2, ensure_ascii=False)}")
-        except:
-            # JSON이 아닌 경우 (HTML 에러 페이지 등)
-            print(f"📥 [DEBUG RECV] Body(Raw Text): {resp.text[:500]}") # 너무 길면 잘라서 500자까지
-        print("-" * 50)
-        # ---------------------------------------------------------
+        if resp.status_code != 200:
+            print(f"📥 [DEBUG RECV] Error Body: {resp.text}")
 
         resp.isOK = lambda: resp.status_code == 200
         resp.printError = lambda *args, **kwargs: None 
