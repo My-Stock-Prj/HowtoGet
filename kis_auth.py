@@ -266,3 +266,23 @@ def get_investor_trade(stock_code, target_date):
     
     res = _url_fetch(url, {}, tr_id, params, is_post=False)
     return res.getBody()
+
+# [추가] 종목별 프로그램매매추이(일별) 조회 전용 함수 (FHPPG04650201)
+def get_program_trade(stock_code, target_date):
+    """
+    국내주식 종목별 프로그램매매추이(일별) 조회 (FHPPG04650201)
+    """
+    url = "/uapi/domestic-stock/v1/quotations/program-trade-by-stock-daily"
+    tr_id = "FHPPG04650201"
+    
+    params = {
+        "FID_COND_MRKT_DIV_CODE": "J",
+        "FID_INPUT_ISCD": stock_code,
+        "FID_INPUT_DATE_1": target_date,
+        "FID_INPUT_DATE_2": target_date,
+        "FID_PERIOD_DIV_CODE": "D",
+        "FID_ORG_ADJ_PRC": "0"
+    }
+    
+    res = _url_fetch(url, {}, tr_id, params, is_post=False)
+    return res.getBody()
