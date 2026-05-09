@@ -161,7 +161,7 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
 
 def get_stock_base_info(stock_code):
     """
-    국내주식 종목정보 상세조회 (CTPF1101R)
+    국내주식 종목정보 상세조회 (CTPF1002R)
     """
     global _env
     if _env is None: _env = getTREnv()
