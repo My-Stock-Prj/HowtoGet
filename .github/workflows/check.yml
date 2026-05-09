@@ -1,4 +1,3 @@
-# 이 코드는 check.yml
 name: PY & Parquet Checker
 
 on:
@@ -51,5 +50,7 @@ jobs:
             exit 1
           fi
         env:
-          # 환경변수 설정 (필요한 경우)
+          # 환경변수 설정
           DATA_BASE_DIR: './DB'
+          # kis_auth.py의 get_gcp_creds()가 사용하는 환경 변수명으로 매핑
+          GCP_CREDENTIALS: ${{ secrets.GCP_KEYS }}
