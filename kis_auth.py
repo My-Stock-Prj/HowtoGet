@@ -114,15 +114,24 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
     print(f"📡 [DEBUG SEND] TR_ID: {headers['tr_id']}")
     
     try:
-        # params 규격 교정
-        if isinstance(params, str):
-            try: params = json.loads(params)
-            except: pass
+        # [수정 사항 반영] params 규격 교정 및 데이터 타입 강제
+        if params is not None:
+            if isinstance(params, str):
+                try: 
+                    params = json.loads(params)
+                except: 
+                    pass
+            
+            # [핵심] 상품번호(PDNO)가 숫자형으로 유실되지 않도록 문자열로 강제 변환
+            if isinstance(params, dict) and "PDNO" in params:
+                params["PDNO"] = str(params["PDNO"]).strip().zfill(6)
 
         # 3. 통신 수행
         if is_post:
+            # POST 방식: json 인자로 전달
             resp = requests.post(full_url, headers=headers, json=params)
         else:
+            # GET 방식: params 인자로 전달 (이 부분이 명확해야 서버가 PDNO를 읽음)
             resp = requests.get(full_url, headers=headers, params=params)
         
         # [DEBUG RECV] 응답 확인
@@ -143,9 +152,12 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
             def isOK(self): return False
             def printError(self, *args, **kwargs): pass
             def json(self): return {}
+            def getBody(self): return AttrDict({}) # getBody 호출 시 에러 방지
             @property
             def status_code(self): return 500
         return MockResp()
+
+
 def get_stock_base_info(stock_code):
     """
     [강제 삽입 버전] 종목정보 상세조회 (CTPF1101R)
