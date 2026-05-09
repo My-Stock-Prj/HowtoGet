@@ -286,3 +286,52 @@ def get_program_trade(stock_code, target_date):
     
     res = _url_fetch(url, {}, tr_id, params, is_post=False)
     return res.getBody()
+
+# [추가] 국내주식 공매도 일별추이 조회 (FHPST04830000)
+def get_short_sale_daily(stock_code, target_date):
+    """
+    국내주식 공매도 일별추이 (FHPST04830000)
+    """
+    url = "/uapi/domestic-stock/v1/quotations/daily-short-sale"
+    tr_id = "FHPST04830000"
+    params = {
+        "FID_COND_MRKT_DIV_CODE": "J",
+        "FID_INPUT_ISCD": stock_code,
+        "FID_PERIOD_DIV_CODE": "D",
+        "FID_INPUT_DATE_1": target_date,
+        "FID_INPUT_DATE_2": target_date
+    }
+    res = _url_fetch(url, {}, tr_id, params, is_post=False)
+    return res.getBody()
+
+# [추가] 종목별 일별 대차거래추이 조회 (HHPST074500C0)
+def get_loan_trans_daily(stock_code, target_date):
+    """
+    종목별 일별 대차거래추이 (HHPST074500C0)
+    """
+    url = "/uapi/domestic-stock/v1/quotations/daily-loan-trans"
+    tr_id = "HHPST074500C0"
+    params = {
+        "FID_COND_MRKT_DIV_CODE": "J",
+        "FID_INPUT_ISCD": stock_code,
+        "FID_INPUT_DATE_1": target_date,
+        "FID_INPUT_DATE_2": target_date
+    }
+    res = _url_fetch(url, {}, tr_id, params, is_post=False)
+    return res.getBody()
+
+# [추가] 국내주식 신용잔고 일별추이 조회 (FHPST04760000)
+def get_credit_balance_daily(stock_code, target_date):
+    """
+    국내주식 신용잔고 일별추이 (FHPST04760000)
+    """
+    url = "/uapi/domestic-stock/v1/quotations/daily-credit-balance"
+    tr_id = "FHPST04760000"
+    params = {
+        "FID_COND_MRKT_DIV_CODE": "J",
+        "FID_INPUT_ISCD": stock_code,
+        "FID_INPUT_DATE_1": target_date,
+        "FID_INPUT_DATE_2": target_date
+    }
+    res = _url_fetch(url, {}, tr_id, params, is_post=False)
+    return res.getBody()
