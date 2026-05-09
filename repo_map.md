@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-09 09:06:55
+- **Generated Date**: 2026-05-09 12:35:07
 - **Status**: Strict Data Integrity Monitoring
 
 ---
@@ -150,17 +150,7 @@
    - `volume_power(fid_trgt_exls_cls_code, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_div_cls_code, fid_input_price_1, fid_input_price_2, fid_vol_cnt, fid_trgt_cls_code, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
    - `volume_rank(fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_div_cls_code, fid_blng_cls_code, fid_trgt_cls_code, fid_trgt_exls_cls_code, fid_input_price_1, fid_input_price_2, fid_vol_cnt, fid_input_date_1, tr_cont, dataframe)` - *[국내주식] 순위분석*
 ### 🛡️ [CORE AUTH] `kis_auth.py`
-   - `getEnv()`
-   - `getTREnv()`
-   - `auth()`
-   - `get_gcp_creds(scopes)`
-   - `_url_fetch(url, headers, tr_id, params, is_post)`
-   - `get_stock_base_info(stock_code)` - *국내주식 종목정보 상세조회 (CTPF1002R)*
-   - `isOK(self)`
-   - `printError(self)`
-   - `json(self)`
-   - `getBody(self)`
-   - `status_code(self)`
+   - *No public functions*
 
 ## 📂 Directory: DB
 ### 📊 `raw_daily_PQ.parquet`
