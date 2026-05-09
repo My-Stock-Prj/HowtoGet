@@ -6,11 +6,34 @@ import requests
 import time
 from google.oauth2 import service_account
 
-# 1. AttrDict 클래스 (dict.key 접근 지원)
 class AttrDict(dict):
-    """딕셔너리 데이터를 dict.key 형태로 접근 가능하게 해주는 클래스"""
-    __getattr__ = dict.__getitem__
+    """
+    딕셔너리 데이터를 dict.key 형태로 접근 가능하게 하며,
+    중첩된 딕셔너리도 자동으로 AttrDict로 변환하는 클래스
+    """
+    def __init__(self, mapping=None, **kwargs):
+        if mapping is None:
+            mapping = {}
+        if kwargs:
+            mapping.update(kwargs)
+        
+        # 중첩된 모든 dict를 AttrDict로 변환
+        for k, v in mapping.items():
+            if isinstance(v, dict):
+                mapping[k] = AttrDict(v)
+            elif isinstance(v, list):
+                mapping[k] = [AttrDict(i) if isinstance(i, dict) else i for i in v]
+        
+        super().__init__(mapping)
+
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            raise AttributeError(f"AttrDict에 '{key}' 키가 존재하지 않습니다.")
+
     __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format='%(message)s')
