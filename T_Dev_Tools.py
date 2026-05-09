@@ -50,6 +50,9 @@ def generate_repo_map():
             # 1. 파이썬 파일 분석
             if item.endswith(".py") and item != "T_Dev_Tools.py":
                 functions_info = []
+                # [추가] kis_auth.py는 핵심 보안 시스템으로 별도 표시
+                is_core = "🛡️ [CORE AUTH]" if item == "kis_auth.py" else "📄"
+                
                 try:
                     with open(path, "r", encoding="utf-8") as f:
                         content = f.read()
@@ -65,22 +68,21 @@ def generate_repo_map():
                                     arg_str = ", ".join(args)
                                     doc = ast.get_docstring(node)
                                     doc_summary = f" - *{doc.splitlines()[0]}*" if doc else ""
-                                    functions_info.append(f"  - `{node.name}({arg_str})`{doc_summary}")
+                                    functions_info.append(f"   - `{node.name}({arg_str})`{doc_summary}")
                 except Exception: pass
-                lines.append(f"### 📄 `{item}`")
-                lines.extend(functions_info if functions_info else ["  - *No public functions*"])
+                
+                lines.append(f"### {is_core} `{item}`")
+                lines.extend(functions_info if functions_info else ["   - *No public functions*"])
 
             # 2. 데이터 파일 분석 (데이터 완결성 검증 로직 포함)
             elif item.endswith(".parquet"):
                 lines.append(f"### 📊 `{item}`")
                 try:
-                    # 파일 크기 확인
                     file_size = os.path.getsize(path)
                     if file_size == 0:
                         lines.append(f"  - **Note**: `Empty File (0 KB)` - *폴더 유지용 또는 초기화 전 상태*")
                         continue
 
-                    # 데이터 로드 시도
                     df = pd.read_parquet(path)
                     if df.empty:
                         lines.append(f"  - **Note**: `No Data` - *헤더는 있으나 행이 없음*")
@@ -88,29 +90,34 @@ def generate_repo_map():
                     else:
                         row_count = len(df)
                         cols = ", ".join([f"`{c}`" for c in df.columns])
-                        date_info = ""
+                        integrity_info = ""
                         
-                        # [개선] 마스터 파일 여부 체크 및 날짜 분석 스킵 (Invalid date data "0" 에러 방지)
+                        # [검증 강화] kis_auth의 정제 정책(6자리 코드) 준수 여부 확인
+                        code_cols = [c for c in df.columns if any(x in c for x in ['코드', 'PDNO'])]
+                        if code_cols:
+                            sample_codes = df[code_cols[0]].astype(str).tolist()[:50]
+                            if any(len(c) != 6 for c in sample_codes if c.isdigit()):
+                                integrity_info += " | ⚠️ `Code Length Issue`"
+                            else:
+                                integrity_info += " | ✅ `Code Refined`"
+
+                        # [유지] 날짜 분석 로직
                         is_master_file = "raw_mst" in item.lower()
                         date_cols = [c for c in df.columns if any(x in c for x in ['날짜', '일자'])]
                         
                         if date_cols and not is_master_file:
                             target_col = date_cols[0]
-                            # [완결성 체크] errors='raise'를 통해 잘못된 데이터(0 등) 발견 시 에러 발생
                             try:
-                                # 날짜 형식을 명시적으로 지정하여 엄격하게 검증
                                 valid_dates = pd.to_datetime(df[target_col], errors='raise')
                                 min_dt = valid_dates.min().strftime('%Y-%m-%d')
                                 max_dt = valid_dates.max().strftime('%Y-%m-%d')
-                                date_info = f" | 📅 `{min_dt} ~ {max_dt}`"
+                                integrity_info += f" | 📅 `{min_dt} ~ {max_dt}`"
                             except Exception as date_err:
-                                # 날짜 에러 발생 시 상세 메시지 포함하여 raise
                                 raise ValueError(f"Invalid date format in '{target_col}': {str(date_err)}")
                         elif is_master_file:
-                            # 마스터 파일은 날짜 범위 분석 대신 라벨 표시
-                            date_info = " | 🏷️ `Master Data`"
+                            integrity_info += " | 🏷️ `Master Data`"
                         
-                        lines.append(f"  - **Stats**: `{row_count:,} rows`{date_info}")
+                        lines.append(f"  - **Stats**: `{row_count:,} rows`{integrity_info}")
                         lines.append(f"  - **Columns**: {cols}")
 
                 except FileNotFoundError:
@@ -118,7 +125,6 @@ def generate_repo_map():
                 except PermissionError:
                     lines.append(f"  - ❌ **Error**: `Permission Denied` (Locked by another process)")
                 except Exception as e:
-                    # 완결성 위배를 포함한 모든 에러를 명확히 요약하여 기록
                     err_msg = str(e).split('\n')[0]
                     lines.append(f"  - ❌ **DATA INTEGRITY ERROR**: `{err_msg}`")
 
@@ -132,7 +138,7 @@ def generate_repo_map():
 
     with open(target_file, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-    print(f"✅ {target_file} 가 갱신되었습니다. (파일명 주석 및 데이터 검증 포함)")
+    print(f"✅ {target_file} 가 갱신되었습니다. (보안 코어 식별 및 데이터 정제 검증 포함)")
 
 if __name__ == "__main__":
     generate_repo_map()
