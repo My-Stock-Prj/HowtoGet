@@ -161,8 +161,8 @@ def fetch_daily_price(ticker, target_date, mst_info):
             "종금순매수수량": ka.to_int(inv.mrbn_ntby_qty),
 
             # --- 프로그램 매매추이 (2개) ---
-            "프로그램순매수수량": ka.to_int(pgm.acml_vol),
-            "프로그램순매수대금": ka.to_int(pgm.acml_tr_pbmn),
+            "프로그램순매수수량": ka.to_int(pgm.whol_smtn_ntby_qty),      # 전체 합계 순매수 수량
+            "프로그램순매수대금": ka.to_int(pgm.whol_smtn_ntby_tr_pbmn), # 전체 합계 순매수 대금
 
             # --- 공매도/대차/신용 (신규 6개) ---
             "공매도체결수량": ka.to_int(shrt.ssts_cntg_qty),
