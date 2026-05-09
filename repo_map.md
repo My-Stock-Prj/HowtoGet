@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-09 12:38:04
+- **Generated Date**: 2026-05-09 12:49:55
 - **Status**: Strict Data Integrity Monitoring
 
 ---
@@ -7,7 +7,7 @@
 ## 📂 Directory: Root
 ### 📄 `build_raw_PQ.py`
    - `get_combined_targets()`
-   - `fetch_daily_price(ticker, target_date)`
+   - `fetch_daily_price(ticker, target_date, mst_info)`
    - `main()`
 ### 📄 `build_raw_master.py`
    - `get_base_mst()`
