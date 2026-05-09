@@ -103,9 +103,10 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
 
     # 2. 필수 인증 정보 강제 주입
     headers["Content-Type"] = "application/json"
-    headers["authorization"] = f"Bearer {_env.access_token}"
-    headers["appkey"] = _env.my_app
-    headers["appsecret"] = _env.my_sec
+    token = _env.access_token.strip() if _env.access_token else ""
+    headers["authorization"] = f"Bearer {token}"
+    headers["appkey"] = _env.my_app.strip()
+    headers["appsecret"] = _env.my_sec.strip()
     headers["tr_id"] = tr_id if tr_id else "FHKST03010100" # TR_ID 누락 방어
     headers["custtype"] = "P"
 
