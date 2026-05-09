@@ -89,12 +89,27 @@ def fetch_daily_price(ticker, target_date, mst_info):
         inv_list = res_inv.get('output2', [])
         inv = ka.AttrDict(inv_list[0]) if inv_list else ka.AttrDict({})
 
-        # 3. 프로그램 매매추이 조회 (FHPPG04650201) 추가
+        # 3. 프로그램 매매추이 조회 (FHPPG04650201)
         res_pgm = ka.get_program_trade(ticker, target_date)
         pgm_list = res_pgm.get('output2', [])
         pgm = ka.AttrDict(pgm_list[0]) if pgm_list else ka.AttrDict({})
 
-        # [30개 칼럼 정밀 매핑]
+        # 4. 공매도 일별추이 조회 (FHPST04830000) 추가
+        res_shrt = ka.get_short_sale_daily(ticker, target_date)
+        shrt_list = res_shrt.get('output', [])
+        shrt = ka.AttrDict(shrt_list[0]) if shrt_list else ka.AttrDict({})
+
+        # 5. 대차거래추이 조회 (HHPST074500C0) 추가
+        res_loan = ka.get_loan_trans_daily(ticker, target_date)
+        loan_list = res_loan.get('output', [])
+        loan = ka.AttrDict(loan_list[0]) if loan_list else ka.AttrDict({})
+
+        # 6. 신용잔고추이 조회 (FHPST04760000) 추가
+        res_cred = ka.get_credit_balance_daily(ticker, target_date)
+        cred_list = res_cred.get('output', [])
+        cred = ka.AttrDict(cred_list[0]) if cred_list else ka.AttrDict({})
+
+        # [36개 칼럼 정밀 매핑]
         return {
             # --- 시세 데이터 (14개) ---
             "날짜": target_date,
@@ -128,9 +143,17 @@ def fetch_daily_price(ticker, target_date, mst_info):
             "보험순매수수량": ka.to_int(inv.insu_ntby_qty),
             "종금순매수수량": ka.to_int(inv.mrbn_ntby_qty),
 
-            # --- 프로그램 매매추이 (2개) 추가 ---
+            # --- 프로그램 매매추이 (2개) ---
             "프로그램순매수수량": ka.to_int(pgm.acml_vol),
-            "프로그램순매수대금": ka.to_int(pgm.acml_tr_pbmn)
+            "프로그램순매수대금": ka.to_int(pgm.acml_tr_pbmn),
+
+            # --- 공매도/대차/신용 (신규 6개) ---
+            "공매도체결수량": ka.to_int(shrt.ssts_cntg_qty),
+            "누적공매도체결수량": ka.to_int(shrt.acml_ssts_cntg_qty),
+            "공매도거래량비중": ka.to_float(shrt.ssts_vol_rlim),
+            "당일대차잔고주수": ka.to_int(loan.rmnd_stcn),
+            "전체융자잔고주수": ka.to_int(cred.whol_loan_rmnd_stcn),
+            "전체융자잔고비율": ka.to_float(cred.whol_loan_rmnd_rate)
         }
             
     except Exception as e:
@@ -168,7 +191,7 @@ def main():
         if collected:
             df_new = pd.DataFrame(collected)
             
-            # 칼럼 순서 보장 (기존 28개 + 신규 2개)
+            # 칼럼 순서 보장 (기존 30개 + 신규 6개)
             base_cols = ["날짜", "종목코드", "종목명", "구분(출처)", "종가", "시가", "고가", "저가", "거래량", "거래대금", "회전율", "상장주수", "락구분", "재평가사유"]
             investor_cols = [
                 "외국인순매수수량", "외국인순매수대금", "기관계순매수수량", "기관계순매수대금", "기금순매수수량", "기금순매수대금",
@@ -176,8 +199,9 @@ def main():
                 "보험순매수수량", "종금순매수수량"
             ]
             program_cols = ["프로그램순매수수량", "프로그램순매수대금"]
+            extended_cols = ["공매도체결수량", "누적공매도체결수량", "공매도거래량비중", "당일대차잔고주수", "전체융자잔고주수", "전체융자잔고비율"]
             
-            df_new = df_new[base_cols + investor_cols + program_cols]
+            df_new = df_new[base_cols + investor_cols + program_cols + extended_cols]
 
             if os.path.exists(SAVE_PATH):
                 df_old = pd.read_parquet(SAVE_PATH)
