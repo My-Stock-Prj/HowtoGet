@@ -331,9 +331,11 @@ def get_credit_balance_daily(stock_code, target_date):
     tr_id = "FHPST04760000"
     params = {
         "FID_COND_MRKT_DIV_CODE": "J",
+        "FID_COND_SCR_DIV_CODE": "20476", # 추가 (신용잔고 화면번호)
         "FID_INPUT_ISCD": stock_code,
         "FID_INPUT_DATE_1": target_date,
-        "FID_INPUT_DATE_2": target_date
+        "FID_INPUT_DATE_2": target_date,
+        "FID_ORG_ADJ_PRC": "0"            # 추가
     }
     res = _url_fetch(url, {}, tr_id, params, is_post=False)
     return res.getBody()
