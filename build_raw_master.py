@@ -20,28 +20,30 @@ def get_base_mst():
         url = f"https://new.real.download.dws.co.kr/common/master/{m_type}_code.mst.zip"
         file_zip = f"{m_type}.zip"
         print(f"📡 [{m_code}] MST 파일 다운로드 중...")
-        urllib.request.request.urlretrieve(url, file_zip)
+        # 원본 유지: urllib.request.urlretrieve(url, file_zip)
+        urllib.request.urlretrieve(url, file_zip)
         with zipfile.ZipFile(file_zip) as z:
             z.extractall()
         os.remove(file_zip)
         
         file_name = f"{m_type}_code.mst"
         data = []
+        # 원본 p2_len 로직은 후방 인덱싱에서 line[-186]으로 대체되므로 제거해도 되나, 
+        # 구조적 엄격함을 위해 남겨두되 실제 판별은 line[-186]으로 수행합니다.
         with open(file_name, mode="r", encoding="cp949") as f:
             for row in f:
-                # 줄바꿈 문자를 제거하여 길이를 표준화 (후방 인덱싱의 핵심)
+                # 후방 인덱싱을 위한 전처리
                 line = row.strip()
                 if not line: continue
 
-                # 기존 컬럼 추출 로직 유지
+                # 원본 컬럼 추출 로직 (strip 유지)
                 code, std_code, name = line[0:9].strip(), line[9:21].strip(), line[21:61].strip()
                 
-                # 개선 로직: 칼럼 분리 및 후방 인덱스(-186) 참조
                 kospi200_val = 'N'
                 kosdaq150_val = 'N'
                 
+                # 핵심 변경: 뒤에서부터 세는 -186 인덱스 적용
                 if m_code == "KSQ":
-                    # 분석 결과 확정된 절대 좌표: 뒤에서 186번째 칸
                     if len(line) >= 186 and line[-186] == 'Y':
                         kosdaq150_val = 'Y'
                 
@@ -70,7 +72,6 @@ def augment_master_via_api(df):
     success_cnt, fail_cnt = 0, 0
 
     for idx, row in df.iterrows():
-        # [수정] 전처리는 kis_auth에 일임하되, 숫자가 아닌 경우 skip 로직은 유지
         raw_code = str(row['단축코드']).strip()
         name = row['종목명']
         
@@ -78,10 +79,8 @@ def augment_master_via_api(df):
             continue
         
         try:
-            # 🔍 API 호출 (zfill 등 정제는 ka.get_stock_base_info 내부에서 수행됨)
             res = ka.get_stock_base_info(raw_code)
             
-            # [유지] 디버깅 코드: 서버의 원시 응답 확인
             if res:
                 try:
                     raw_res_log = json.dumps(dict(res), ensure_ascii=False)
@@ -90,14 +89,11 @@ def augment_master_via_api(df):
             else:
                 raw_res_log = "None (No Response)"
 
-            # 1. 서버 회신이 아예 없는 경우
             if not res:
                 print(f"   [FAIL] {raw_code} | {name} | 서버 응답 없음")
                 fail_cnt += 1
                 continue
 
-            # 2. 서버가 에러 코드를 보낸 경우 (rt_cd != '0')
-            # AttrDict 활용으로 점(.) 표기법 사용
             if res.rt_cd != '0':
                 msg = res.msg1 if res.msg1 else '메시지 없음'
                 print(f"   [DEBUG JSON] {raw_code} | {raw_res_log}")
@@ -105,11 +101,9 @@ def augment_master_via_api(df):
                 fail_cnt += 1
                 continue
 
-            # 3. 정상 응답 처리 (output 존재)
             if 'output' in res:
                 out = res.output
                 
-                # 개선 로직: 분리된 KOSPI200 칼럼에 API 결과 기록 (KOSDAQ150은 보존)
                 if row['시장구분'] == 'STK' and out.kospi200_item_yn == 'Y':
                     df.at[idx, 'KOSPI200'] = 'Y'
                 
@@ -125,8 +119,6 @@ def augment_master_via_api(df):
                 success_cnt += 1
                 if success_cnt % 100 == 0:
                     print(f"   ✅ [SAMPLE] {raw_code}({name}) 성공 | 현재 {idx+1}번째 처리 중")
-
-            # [삭제] time.sleep(0.12) -> kis_auth._url_fetch 내부에서 공통 수행됨
 
         except Exception as e:
             print(f"   [CRITICAL] {raw_code} | {name} | 에러 내용: {str(e)}")
