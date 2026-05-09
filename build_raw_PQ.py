@@ -120,7 +120,7 @@ def main():
 
         # 2. 데이터 수집
         # [참고] 날짜는 실제 수집 시점에 맞게 조정 필요
-        target_date = datetime.now().strftime("%Y%m%d") 
+        target_date = "20260504"
         print(f"📅 수집 기준 날짜: {target_date}")
         
         collected = []
