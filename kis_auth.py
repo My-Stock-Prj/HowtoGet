@@ -261,7 +261,8 @@ def get_investor_trade(stock_code, target_date):
         "FID_INPUT_DATE_1": target_date,
         "FID_INPUT_DATE_2": target_date,
         "FID_PERIOD_DIV_CODE": "D",
-        "FID_ORG_ADJ_PRC": "0"
+        "FID_ORG_ADJ_PRC": "0",
+        "FID_ETC_CLS_CODE": "1"
     }
     
     res = _url_fetch(url, {}, tr_id, params, is_post=False)
