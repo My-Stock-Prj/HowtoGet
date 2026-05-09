@@ -22,15 +22,12 @@ def sync_to_dpq(filename):
         df_clean = df.fillna("").astype(str)
         data_to_send = [df_clean.columns.values.tolist()] + df_clean.values.tolist()
         
-        # GitHub Actions 환경에서는 Secrets에 저장된 JSON 정보를 활용해야 합니다.
+        # kis_auth 정책에 따라 별도의 JSON 로딩 없이 scopes만 전달하여 인증 객체를 생성합니다.
         scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-        
-        # 중요: kis_auth.get_gcp_creds가 내부적으로 환경 변수를 참조하는지 확인이 필요합니다.
         creds = ka.get_gcp_creds(scopes)
         
         if not creds:
-            # 인증 실패 시 출력
-            print("❌ [ERROR] 구글 인증 객체(creds) 생성 실패. kis_auth 설정을 확인하세요.")
+            print("❌ [ERROR] 구글 인증 실패: GCP_CREDENTIALS 환경 변수를 확인하세요.")
             return
 
         client = gspread.authorize(creds)
