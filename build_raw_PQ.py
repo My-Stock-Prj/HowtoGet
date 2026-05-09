@@ -84,15 +84,19 @@ def fetch_daily_price(ticker, target_date, mst_info):
         if d2.stck_bsop_date != target_date:
             return None
 
-        # 2. 투자자 매매동향 조회 (FHPTJ04160001) 추가
+        # 2. 투자자 매매동향 조회 (FHPTJ04160001)
         res_inv = ka.get_investor_trade(ticker, target_date)
-        # 투자자 데이터는 output2 리스트의 첫 번째 항목(당일)을 참조
         inv_list = res_inv.get('output2', [])
         inv = ka.AttrDict(inv_list[0]) if inv_list else ka.AttrDict({})
 
-        # [28개 칼럼 정밀 매핑]
+        # 3. 프로그램 매매추이 조회 (FHPPG04650201) 추가
+        res_pgm = ka.get_program_trade(ticker, target_date)
+        pgm_list = res_pgm.get('output2', [])
+        pgm = ka.AttrDict(pgm_list[0]) if pgm_list else ka.AttrDict({})
+
+        # [30개 칼럼 정밀 매핑]
         return {
-            # --- 시세 데이터 (기존 14개) ---
+            # --- 시세 데이터 (14개) ---
             "날짜": target_date,
             "종목코드": ticker,
             "종목명": mst_info.get("종목명", ""),
@@ -108,7 +112,7 @@ def fetch_daily_price(ticker, target_date, mst_info):
             "락구분": d2.flng_cls_code,
             "재평가사유": d2.revl_issu_reas,
             
-            # --- 투자자 매매동향 (신규 14개 - 순서 준수) ---
+            # --- 투자자 매매동향 (14개) ---
             "외국인순매수수량": ka.to_int(inv.frgn_ntby_qty),
             "외국인순매수대금": ka.to_int(inv.frgn_ntby_tr_pbmn),
             "기관계순매수수량": ka.to_int(inv.orgn_ntby_qty),
@@ -122,7 +126,11 @@ def fetch_daily_price(ticker, target_date, mst_info):
             "사모펀드순매수수량": ka.to_int(inv.pe_fund_ntby_vol),
             "은행순매수수량": ka.to_int(inv.bank_ntby_qty),
             "보험순매수수량": ka.to_int(inv.insu_ntby_qty),
-            "종금순매수수량": ka.to_int(inv.mrbn_ntby_qty)
+            "종금순매수수량": ka.to_int(inv.mrbn_ntby_qty),
+
+            # --- 프로그램 매매추이 (2개) 추가 ---
+            "프로그램순매수수량": ka.to_int(pgm.acml_vol),
+            "프로그램순매수대금": ka.to_int(pgm.acml_tr_pbmn)
         }
             
     except Exception as e:
@@ -160,14 +168,16 @@ def main():
         if collected:
             df_new = pd.DataFrame(collected)
             
-            # 칼럼 순서 보장 (기존 14개 + 신규 14개)
+            # 칼럼 순서 보장 (기존 28개 + 신규 2개)
             base_cols = ["날짜", "종목코드", "종목명", "구분(출처)", "종가", "시가", "고가", "저가", "거래량", "거래대금", "회전율", "상장주수", "락구분", "재평가사유"]
             investor_cols = [
                 "외국인순매수수량", "외국인순매수대금", "기관계순매수수량", "기관계순매수대금", "기금순매수수량", "기금순매수대금",
                 "개인순매수수량", "개인순매수대금", "증권순매수수량", "투자신탁순매수수량", "사모펀드순매수수량", "은행순매수수량",
                 "보험순매수수량", "종금순매수수량"
             ]
-            df_new = df_new[base_cols + investor_cols]
+            program_cols = ["프로그램순매수수량", "프로그램순매수대금"]
+            
+            df_new = df_new[base_cols + investor_cols + program_cols]
 
             if os.path.exists(SAVE_PATH):
                 df_old = pd.read_parquet(SAVE_PATH)
