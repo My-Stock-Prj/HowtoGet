@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-09 13:22:35
+- **Generated Date**: 2026-05-09 13:27:10
 - **Status**: Strict Data Integrity Monitoring
 
 ---
@@ -167,8 +167,8 @@
 
 ## 📂 Directory: DB
 ### 📊 `raw_daily_PQ.parquet`
-  - **Stats**: `153 rows` | ✅ `Code Refined` | 📅 `2026-05-04 ~ 2026-05-04`
-  - **Columns**: `날짜`, `종목코드`, `시가`, `고가`, `저가`, `종가`, `거래량`, `거래대금`, `재평가사유`
+  - **Stats**: `353 rows` | ✅ `Code Refined` | 📅 `2026-05-04 ~ 2026-05-04`
+  - **Columns**: `날짜`, `종목코드`, `시가`, `고가`, `저가`, `종가`, `거래량`, `거래대금`, `재평가사유`, `종목명`, `구분(출처)`, `회전율`, `상장주수`, `락구분`
 ### 📊 `raw_mst_krx_full.parquet`
   - **Stats**: `4,346 rows` | ✅ `Code Refined` | 🏷️ `Master Data`
   - **Columns**: `단축코드`, `표준코드`, `종목명`, `시장구분`, `KOSPI200`, `KOSDAQ150`, `섹터(대분류)`, `업종(중분류)`, `거래정지여부`, `관리종목여부`, `상장주수`, `주식종류코드`
