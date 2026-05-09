@@ -246,3 +246,23 @@ def get_daily_price(stock_code, start_date, end_date):
     
     res = _url_fetch(url, {}, tr_id, params, is_post=False)
     return res.getBody()
+
+# [추가] Step 1: 종목별 투자자 매매동향(일별) 조회 전용 함수 (FHPTJ04160001)
+def get_investor_trade(stock_code, target_date):
+    """
+    국내주식 종목별 투자자 매매동향(일별) 조회 (FHPTJ04160001)
+    """
+    url = "/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily"
+    tr_id = "FHPTJ04160001"
+    
+    params = {
+        "FID_COND_MRKT_DIV_CODE": "J",
+        "FID_INPUT_ISCD": stock_code,
+        "FID_INPUT_DATE_1": target_date,
+        "FID_INPUT_DATE_2": target_date,
+        "FID_PERIOD_DIV_CODE": "D",
+        "FID_ORG_ADJ_PRC": "0"
+    }
+    
+    res = _url_fetch(url, {}, tr_id, params, is_post=False)
+    return res.getBody()
