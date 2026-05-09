@@ -31,12 +31,25 @@ def get_base_mst():
         with open(file_name, mode="r", encoding="cp949") as f:
             for row in f:
                 code, std_code, name = row[0:9].strip(), row[9:21].strip(), row[21:61].strip()
-                target_val = '0'
+                
+                # 개선 로직: 칼럼 분리 및 정확한 인덱스(41) 참조
+                kospi200_val = 'N'
+                kosdaq150_val = 'N'
+                
                 if m_code == "KSQ":
                     part2 = row[-p2_len:]
-                    if len(part2) > 55 and part2[55:56] == '1':
-                        target_val = 'KRQ150'
-                data.append({'단축코드': code, '표준코드': std_code, '종목명': name, '시장구분': m_code, '수집대상': target_val})
+                    # 명세서 기준 Index 41번(42번째 칸)의 'Y' 여부 확인
+                    if len(part2) > 41 and part2[41:42] == 'Y':
+                        kosdaq150_val = 'Y'
+                
+                data.append({
+                    '단축코드': code, 
+                    '표준코드': std_code, 
+                    '종목명': name, 
+                    '시장구분': m_code, 
+                    'KOSPI200': kospi200_val, 
+                    'KOSDAQ150': kosdaq150_val
+                })
         os.remove(file_name)
         return pd.DataFrame(data)
 
@@ -93,9 +106,9 @@ def augment_master_via_api(df):
             if 'output' in res:
                 out = res.output
                 
-                # 데이터 매핑 (AttrDict 덕분에 get 없이 속성 접근 가능)
+                # 개선 로직: 분리된 KOSPI200 칼럼에 API 결과 기록 (KOSDAQ150은 보존)
                 if row['시장구분'] == 'STK' and out.kospi200_item_yn == 'Y':
-                    df.at[idx, '수집대상'] = 'KSP200'
+                    df.at[idx, 'KOSPI200'] = 'Y'
                 
                 df.at[idx, '섹터(대분류)'] = out.idx_bztp_lcls_cd_name
                 df.at[idx, '업종(중분류)'] = out.idx_bztp_mcls_cd_name
