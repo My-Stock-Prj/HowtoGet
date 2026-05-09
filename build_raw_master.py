@@ -52,10 +52,13 @@ def augment_master_via_api(df):
     success_cnt, fail_cnt = 0, 0
 
     for idx, row in df.iterrows():
-        code, name = row['단축코드'], row['종목명']
+        # [수정] 종목코드가 6자리가 아닐 경우(예: 006380 -> 6380)를 대비해 zfill(6) 강제 적용
+        raw_code = str(row['단축코드']).strip()
+        code = raw_code.zfill(6)
+        name = row['종목명']
         
         try:
-            # 🔍 API 호출
+            # 🔍 API 호출 (kis_auth 내부에서 PRDT_TYPE_CD: "300"이 문자열로 처리되는지 확인 필요)
             res = ka.get_stock_base_info(code)
             
             # 1. 서버 회신이 아예 없는 경우 (None)
@@ -67,6 +70,7 @@ def augment_master_via_api(df):
             # 2. 서버가 에러 코드를 보낸 경우 (rt_cd != '0')
             if res.get('rt_cd') != '0':
                 msg = res.get('msg1', '메시지 없음')
+                # 디버깅을 위해 상세 에러 내용 출력 유지
                 print(f"   [API ERR] {code} | {name.ljust(10)} | 코드:{res.get('rt_cd')} | 사유:{msg}")
                 fail_cnt += 1
                 continue
@@ -75,15 +79,19 @@ def augment_master_via_api(df):
             if 'output' in res:
                 out = res.output # AttrDict 점 표기법
                 
-                # 데이터 매핑
-                if row['시장구분'] == 'STK' and out.kospi200_item_yn == 'Y':
+                # 데이터 매핑 (KeyError 방지를 위해 get 활용 권장하나 원본 스타일 유지)
+                if row['시장구분'] == 'STK' and out.get('kospi200_item_yn') == 'Y':
                     df.at[idx, '수집대상'] = 'KSP200'
                 
                 df.at[idx, '섹터(대분류)'] = out.get('idx_bztp_lcls_cd_name', '')
                 df.at[idx, '업종(중분류)'] = out.get('idx_bztp_mcls_cd_name', '')
                 df.at[idx, '거래정지여부'] = out.get('tr_stop_yn', 'N')
                 df.at[idx, '관리종목여부'] = out.get('admn_item_yn', 'N')
-                df.at[idx, '상장주수'] = int(out.lstg_stqt) if out.get('lstg_stqt') else 0
+                
+                # 숫자 변환 안정성 확보
+                lstg_stqt = out.get('lstg_stqt')
+                df.at[idx, '상장주수'] = int(float(lstg_stqt)) if lstg_stqt else 0
+                
                 df.at[idx, '주식종류코드'] = out.get('stck_kind_cd', '')
                 
                 success_cnt += 1
@@ -91,12 +99,14 @@ def augment_master_via_api(df):
                 if success_cnt % 100 == 0:
                     print(f"   ✅ [SAMPLE] {code}({name}) -> 섹터: {out.get('idx_bztp_lcls_cd_name')}, KSP200: {out.get('kospi200_item_yn')}")
 
-            # 초당 호출 제한(TPS) 준수
-            time.sleep(0.07)
+            # 초당 호출 제한(TPS) 준수 (GitHub Actions 안정성을 위해 0.1초 권장)
+            time.sleep(0.1)
 
         except Exception as e:
+            # 예외 발생 시 로그 출력 후 루프 지속 (전체 중단 방지)
             print(f"   [CRITICAL] {code} | {name} | 에러 내용: {str(e)}")
             fail_cnt += 1
+            time.sleep(0.1)
 
     print("="*60)
     print(f"✨ API 조회 완료! (성공: {success_cnt}, 실패: {fail_cnt})")
