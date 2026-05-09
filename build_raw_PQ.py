@@ -6,10 +6,8 @@ import os
 import time
 import traceback
 from datetime import datetime
-import kis_auth as ka  # 별칭 사용 권장
+import kis_auth as ka  # 보강된 kis_auth 사용
 import gspread
-# 국내 주식 표준 함수 임포트
-from domestic_stock_functions import inquire_daily_itemchartprice
 
 # --- [설정 로드] ---
 BASE_DIR = os.environ.get('DATA_BASE_DIR', './DB')
@@ -20,108 +18,147 @@ def get_combined_targets():
     print("🔍 [DEBUG] 1. 수집 대상 종목 분석 시작...")
     try:
         idx_tickers = []
+        # 마스터 정보를 메모리에 사전에 담아두기 위한 딕셔너리
+        mst_info_map = {}
+        
         if os.path.exists(MST_PATH):
             df_mst = pd.read_parquet(MST_PATH)
             
             if not df_mst.empty:
-                cond = pd.Series([False] * len(df_mst))
+                # [라벨링 로직] K200 > K150 > MY 순으로 구분값 부여
+                cond_k200 = (df_mst.get('KOSPI200섹터업종') == 'Y')
+                cond_k150 = (df_mst.get('KOSDAQ150') == 'Y')
                 
-                # [수정 핵심] 마스터 생성 코드에서 1을 'Y'로 변환했으므로 조건을 'Y'로 변경
-                if 'KOSPI200섹터업종' in df_mst.columns:
-                    cond |= (df_mst['KOSPI200섹터업종'] == 'Y')
+                # 타겟 추출
+                idx_tickers = df_mst[cond_k200 | cond_k150]['단축코드'].unique().tolist()
                 
-                if 'KOSDAQ150' in df_mst.columns:
-                    cond |= (df_mst['KOSDAQ150'] == 'Y')
+                # 메모리 맵 생성 (종목명, 구분 저장)
+                for _, row in df_mst.iterrows():
+                    code = str(row['단축코드']).strip().zfill(6)
+                    label = "MY"
+                    if row.get('KOSPI200섹터업종') == 'Y': label = "K200"
+                    elif row.get('KOSDAQ150') == 'Y': label = "K150"
+                    
+                    mst_info_map[code] = {
+                        "종목명": row.get('종목명', ''),
+                        "구분": label
+                    }
                 
-                # [수정] 전처리는 kis_auth에 일임하므로 원본 리스트를 추출
-                idx_tickers = df_mst[cond]['단축코드'].unique().tolist()
-                print(f"   - 필터링 결과 ('Y' 기준): {len(idx_tickers)} 건")
+                print(f"   - 마스터 필터링 결과: {len(idx_tickers)} 건")
         
-        # 구글 시트 부분 (기존 유지)
+        # 구글 시트 부분
         scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         creds = ka.get_gcp_creds(scopes)
         gsheet_tickers = []
         if creds:
-            client = gspread.authorize(creds)
-            sheet = client.open("my").worksheet("goingup")
-            gsheet_tickers = sheet.col_values(1)[1:]
+            try:
+                client = gspread.authorize(creds)
+                sheet = client.open("my").worksheet("goingup")
+                gsheet_tickers = sheet.col_values(1)[1:]
+            except Exception as e:
+                print(f"   ⚠️ 구글 시트 로드 실패: {e}")
         
-        final_list = list(set(idx_tickers + gsheet_tickers))
-        print(f"🚀 최종 합계: {len(final_list)} 건")
-        # 빈 값만 필터링하고 공백 제거/zfill은 kis_auth에 맡깁니다.
-        return [str(t) for t in final_list if t]
+        # 최종 합계 및 중복 제거
+        all_tickers = list(set([str(t).strip().zfill(6) for t in (idx_tickers + gsheet_tickers) if t]))
+        print(f"🚀 최종 수집 대상: {len(all_tickers)} 건")
+        
+        return all_tickers, mst_info_map
         
     except Exception as e:
         print(f"❌ [ERROR] get_combined_targets 실패: {str(e)}")
-        return []
+        return [], {}
         
-def fetch_daily_price(ticker, target_date):
+def fetch_daily_price(ticker, target_date, mst_info):
     try:
-        # GEMS 표준 함수는 (DataFrame, Response) 형태의 튜플을 반환합니다.
-        # GEMS 표준 함수 호출 (이제 내부 _url_fetch에서 인증과 속도를 제어함)
-        result = inquire_daily_itemchartprice(
-            "real", "J", ticker, target_date, target_date, "D", "1"
-        )
+        # [수정] GEMS 표준 함수 대신 보강된 kis_auth의 get_daily_price 직접 호출 (수정주가 0 반영)
+        res = ka.get_daily_price(ticker, target_date, target_date)
 
-        # 1. 튜플에서 데이터프레임만 분리 (표준 규격 대응)
-        df_res = result[0] if isinstance(result, tuple) else result
-
-        # 2. 데이터 존재 여부 및 컬럼명 확인 후 매핑
-        if df_res is not None and not df_res.empty:
-            # 첫 번째 행 데이터 가져오기
-            d = df_res.iloc[0]
+        # AttrDict 개선으로 인해 키가 없어도 Crash가 나지 않음
+        out1 = res.get('output1', ka.AttrDict({}))
+        # output2는 리스트 형태이므로 첫 번째 요소 접근
+        out2_list = res.get('output2', [])
+        
+        if not out2_list:
+            return None
             
-            # API 응답 필드명이 대문자인 경우와 소문자인 경우 모두 대응 (기존 유지)
-            return {
-                "날짜": target_date, 
-                "종목코드": ticker,
-                "시가": int(d.get('stck_oprc', d.get('STCK_OPRC', 0))), 
-                "고가": int(d.get('stck_hgpr', d.get('STCK_HGPR', 0))),
-                "저가": int(d.get('stck_lwpr', d.get('STCK_LWPR', 0))), 
-                "종가": int(d.get('stck_clpr', d.get('STCK_CLPR', 0))),
-                "거래량": int(d.get('acml_vol', d.get('ACML_VOL', 0))), 
-                "거래대금": int(d.get('acml_tr_pbmn', d.get('ACML_TR_PBMN', 0))),
-                "재평가사유": d.get('revl_issu_reas', '')
-            }
+        d2 = ka.AttrDict(out2_list[0])
+        
+        # [검증] 날짜 일치 여부 확인
+        if d2.stck_bsop_date != target_date:
+            return None
+
+        # [14개 칼럼 정밀 매핑]
+        return {
+            "날짜": target_date,
+            "종목코드": ticker,
+            "종목명": mst_info.get("종목명", ""),
+            "구분(출처)": mst_info.get("구분", "MY"),
+            "종가": ka.to_int(d2.stck_clpr),
+            "시가": ka.to_int(d2.stck_oprc),
+            "고가": ka.to_int(d2.stck_hgpr),
+            "저가": ka.to_int(d2.stck_lwpr),
+            "거래량": ka.to_int(out1.acml_vol),
+            "거래대금": ka.to_int(out1.acml_tr_pbmn),
+            "회전율": ka.to_float(out1.vol_tnrt),
+            "상장주수": ka.to_int(out1.lstn_stcn),
+            "락구분": d2.flng_cls_code,
+            "재평가사유": d2.revl_issu_reas
+        }
             
     except Exception as e:
-        # traceback을 통해 정확히 어디서 에러가 나는지 출력 (기존 유지)
-        # print(traceback.format_exc()) 
         print(f"⚠️ [{ticker}] 데이터 처리 실패: {str(e)}")
     return None
 
 def main():
     print(f"🚀 {datetime.now()} 프로세스 시작")
     try:
-        # [수정] ka.auth() 삭제 -> inquire_daily_itemchartprice 내부에서 필요 시 자동 호출
-        
-        # 2. 대상 리스트 확보
-        tickers = get_combined_targets()
+        # 1. 대상 리스트 및 마스터 맵 확보
+        tickers, mst_info_map = get_combined_targets()
         if not tickers:
             print("⚠️ 수집할 종목이 없습니다.")
             return
 
-        # 3. 데이터 수집
-        target_date = "20260504"
+        # 2. 데이터 수집
+        # [참고] 날짜는 실제 수집 시점에 맞게 조정 필요
+        target_date = datetime.now().strftime("%Y%m%d") 
+        print(f"📅 수집 기준 날짜: {target_date}")
+        
         collected = []
-        for ticker in tickers:
-            res = fetch_daily_price(ticker, target_date)
+        total = len(tickers)
+        
+        for i, ticker in enumerate(tickers):
+            # 개별 종목의 마스터 정보 가져오기
+            mst_info = mst_info_map.get(ticker, {"종목명": "", "구분": "MY"})
+            
+            res = fetch_daily_price(ticker, target_date, mst_info)
             if res: 
                 collected.append(res)
             
-            # [수정] time.sleep(0.2) 삭제 -> kis_auth._url_fetch가 0.12초 간격 자동 관리
+            if (i + 1) % 50 == 0:
+                print(f"   ⏳ 진행 중... ({i+1}/{total})")
 
-        # 4. 저장 로직 (기존 유지)
+        # 3. 저장 로직
         if collected:
             df_new = pd.DataFrame(collected)
+            
+            # 칼럼 순서 보장
+            cols = ["날짜", "종목코드", "종목명", "구분(출처)", "종가", "시가", "고가", "저가", "거래량", "거래대금", "회전율", "상장주수", "락구분", "재평가사유"]
+            df_new = df_new[cols]
+
             if os.path.exists(SAVE_PATH):
                 df_old = pd.read_parquet(SAVE_PATH)
-                df_new = pd.concat([df_old, df_new]).drop_duplicates(subset=['날짜', '종목코드'], keep='last')
+                # 기존 데이터와 병합 후 중복 제거 (날짜, 종목코드 기준)
+                df_final = pd.concat([df_old, df_new]).drop_duplicates(subset=['날짜', '종목코드'], keep='last')
+            else:
+                df_final = df_new
             
             # 상위 폴더 생성 보장
             os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
-            df_new.to_parquet(SAVE_PATH, index=False)
-            print(f"✅ 저장 완료: {len(df_new)} rows (신규 {len(collected)}건)")
+            df_final.to_parquet(SAVE_PATH, index=False)
+            print(f"✅ 저장 완료: {SAVE_PATH}")
+            print(f"📊 총 데이터: {len(df_final)} rows (금일 {len(collected)}건 추가/갱신)")
+        else:
+            print("ℹ️ 수집된 신규 데이터가 없습니다.")
 
     except Exception as e:
         print(f"❌ [CRITICAL ERROR] {str(e)}")
