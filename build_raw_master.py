@@ -1,3 +1,5 @@
+# 이 코드는 build_raw_master.py 파일
+# -*- coding: utf-8 -*-
 import urllib.request, ssl, zipfile, os, time, json
 import pandas as pd
 import numpy as np
@@ -52,44 +54,38 @@ def augment_master_via_api(df):
     success_cnt, fail_cnt = 0, 0
 
     for idx, row in df.iterrows():
-        # 종목코드 전처리 및 6자리 고정
+        # [수정] 전처리는 kis_auth에 일임하되, 숫자가 아닌 경우 skip 로직은 유지
         raw_code = str(row['단축코드']).strip()
-        code = raw_code.zfill(6)
         name = row['종목명']
-        # [신규 삽입] 숫자가 아닌 종목코드(펀드 등) 건너뛰기
-        if not code.isdigit():
-            # print(f"   [SKIP] {code} | {name} | 숫자가 아닌 종목코드") # 필요 시 주석 해제
+        
+        if not raw_code.isdigit():
             continue
         
         try:
-            # 🔍 API 호출(이제 숫자 코드가 확실한 경우에만 호출됨)
-            res = ka.get_stock_base_info(code)
+            # 🔍 API 호출 (zfill 등 정제는 ka.get_stock_base_info 내부에서 수행됨)
+            res = ka.get_stock_base_info(raw_code)
             
-            # ---------------------------------------------------------
-            # [디버깅 코드 삽입] 서버의 원시 응답 확인
-            # ---------------------------------------------------------
+            # [유지] 디버깅 코드: 서버의 원시 응답 확인
             if res:
-                # AttrDict나 객체 형태일 경우 dict로 변환하여 JSON 문자열 생성
                 try:
                     raw_res_log = json.dumps(dict(res), ensure_ascii=False)
                 except:
                     raw_res_log = str(res)
             else:
                 raw_res_log = "None (No Response)"
-            # ---------------------------------------------------------
 
             # 1. 서버 회신이 아예 없는 경우
             if not res:
-                print(f"   [FAIL] {code} | {name} | 서버 응답 없음")
+                print(f"   [FAIL] {raw_code} | {name} | 서버 응답 없음")
                 fail_cnt += 1
                 continue
 
             # 2. 서버가 에러 코드를 보낸 경우 (rt_cd != '0')
-            if res.get('rt_cd') != '0':
-                msg = res.get('msg1', '메시지 없음')
-                # 에러 발생 시 서버가 보낸 원시 JSON을 로그에 찍어 원인 파악
-                print(f"   [DEBUG JSON] {code} | {raw_res_log}")
-                print(f"   [API ERR] {code} | {name.ljust(10)} | 코드:{res.get('rt_cd')} | 사유:{msg}")
+            # AttrDict 활용으로 점(.) 표기법 사용
+            if res.rt_cd != '0':
+                msg = res.msg1 if res.msg1 else '메시지 없음'
+                print(f"   [DEBUG JSON] {raw_code} | {raw_res_log}")
+                print(f"   [API ERR] {res.msg_cd} | {name.ljust(10)} | 코드:{res.rt_cd} | 사유:{msg}")
                 fail_cnt += 1
                 continue
 
@@ -97,30 +93,28 @@ def augment_master_via_api(df):
             if 'output' in res:
                 out = res.output
                 
-                # 데이터 매핑
-                if row['시장구분'] == 'STK' and out.get('kospi200_item_yn') == 'Y':
+                # 데이터 매핑 (AttrDict 덕분에 get 없이 속성 접근 가능)
+                if row['시장구분'] == 'STK' and out.kospi200_item_yn == 'Y':
                     df.at[idx, '수집대상'] = 'KSP200'
                 
-                df.at[idx, '섹터(대분류)'] = out.get('idx_bztp_lcls_cd_name', '')
-                df.at[idx, '업종(중분류)'] = out.get('idx_bztp_mcls_cd_name', '')
-                df.at[idx, '거래정지여부'] = out.get('tr_stop_yn', 'N')
-                df.at[idx, '관리종목여부'] = out.get('admn_item_yn', 'N')
+                df.at[idx, '섹터(대분류)'] = out.idx_bztp_lcls_cd_name
+                df.at[idx, '업종(중분류)'] = out.idx_bztp_mcls_cd_name
+                df.at[idx, '거래정지여부'] = out.tr_stop_yn
+                df.at[idx, '관리종목여부'] = out.admn_item_yn
                 
-                lstg_stqt = out.get('lstg_stqt')
+                lstg_stqt = out.lstg_stqt
                 df.at[idx, '상장주수'] = int(float(lstg_stqt)) if lstg_stqt else 0
-                df.at[idx, '주식종류코드'] = out.get('stck_kind_cd', '')
+                df.at[idx, '주식종류코드'] = out.stck_kind_cd
                 
                 success_cnt += 1
-                # 100건마다 샘플 출력
                 if success_cnt % 100 == 0:
-                    print(f"   ✅ [SAMPLE] {code}({name}) 성공 | 현재 {idx+1}번째 처리 중")
+                    print(f"   ✅ [SAMPLE] {raw_code}({name}) 성공 | 현재 {idx+1}번째 처리 중")
 
-            time.sleep(0.12)
+            # [삭제] time.sleep(0.12) -> kis_auth._url_fetch 내부에서 공통 수행됨
 
         except Exception as e:
-            print(f"   [CRITICAL] {code} | {name} | 에러 내용: {str(e)}")
+            print(f"   [CRITICAL] {raw_code} | {name} | 에러 내용: {str(e)}")
             fail_cnt += 1
-            time.sleep(0.1)
 
     print("="*60)
     print(f"✨ API 조회 완료! (성공: {success_cnt}, 실패: {fail_cnt})")
