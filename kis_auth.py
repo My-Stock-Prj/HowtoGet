@@ -148,27 +148,30 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
         return MockResp()
 def get_stock_base_info(stock_code):
     """
-    주식기본조회 (CTPF1101R) 호출 함수
+    [강제 삽입 버전] 종목정보 상세조회 (CTPF1101R)
     """
-    # 1. 인증 정보 확인 및 토큰 발급 (필요 시)
-    global _env
-    if _env is None or not _env.access_token:
-        auth()
+    # 1. URL 설정 (국내주식 종목정보 상세조회)
+    url = f"{TREnv.my_url}/uapi/domestic-stock/v1/quotations/search-stock-info"
     
-    # 2. API 경로 및 파라미터 설정
-    path = "/uapi/domestic-stock/v1/quotations/search-stock-info"
+    # 2. 헤더 설정
     tr_id = "CTPF1101R"
-    
-    params = {
-        "PRDT_TYPE_CD": "300",
-        "PDNO": str(stock_code).strip() # 공백 제거 및 문자열 확정
+    headers = {
+        "Content-Type": "application/json",
+        "authorization": f"Bearer {TREnv.my_token}",
+        "appkey": TREnv.my_app,
+        "appsecret": TREnv.my_sec,
+        "tr_id": tr_id,
+        "custtype": "P"
     }
 
-    # 3. 내부 엔진(_url_fetch)을 통해 호출
-    # 주식기본조회는 GET 방식이므로 is_post=False
-    resp = _url_fetch(path, {}, tr_id, params, is_post=False)
+    # 3. 파라미터 강제 삽입 (이 부분이 핵심!)
+    # 서버가 요구하는 정확한 키 'PDNO'를 사용해야 합니다.
+    params = {
+        "PRDT_TYPE_CD": "300",
+        "PDNO": str(stock_code).strip().zfill(6)
+    }
+
+    # 4. 호출 (GET 방식은 params 인자를 사용)
+    res = _url_fetch(url, tr_id, headers, params)
     
-    if resp.isOK():
-        return resp.getBody() # AttrDict 객체 반환 (res.output 형태로 접근 가능)
-    else:
-        return None
+    return res
