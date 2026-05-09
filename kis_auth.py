@@ -170,7 +170,7 @@ def get_stock_base_info(stock_code):
     url = "/uapi/domestic-stock/v1/quotations/search-stock-info"
     
     # 2. 헤더 설정 (헤더는 _url_fetch에서 자동으로 채워주므로 빈 딕셔너리만 선언해도 됨)
-    tr_id = "CTPF1101R"
+    tr_id = "CTPF1002R"
     headers = {"tr_id": tr_id}
 
     # 3. 파라미터 설정 (이 부분이 가장 중요!)
