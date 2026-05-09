@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-09 13:57:50
+- **Generated Date**: 2026-05-09 14:30:21
 - **Status**: Strict Data Integrity Monitoring
 
 ---
@@ -160,6 +160,7 @@
    - `get_stock_base_info(stock_code)` - *국내주식 종목정보 상세조회 (CTPF1002R)*
    - `get_daily_price(stock_code, start_date, end_date)` - *국내주식 일별 차트 시세 조회 (FHKST03010100)*
    - `get_investor_trade(stock_code, target_date)` - *국내주식 종목별 투자자 매매동향(일별) 조회 (FHPTJ04160001)*
+   - `get_program_trade(stock_code, target_date)` - *국내주식 종목별 프로그램매매추이(일별) 조회 (FHPPG04650201)*
    - `isOK(self)`
    - `printError(self)`
    - `json(self)`
