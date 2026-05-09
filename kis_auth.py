@@ -156,8 +156,9 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
     try:
         if params is not None:
             if isinstance(params, str):
-                try: params = json.loads(params)
-            except: pass
+                try: 
+                    params = json.loads(params)
+                except: pass
             
             # [수정] 종목코드 자동 정제 범위 확장 (PDNO, FID_INPUT_ISCD 등 범용 키 적용)
             if isinstance(params, dict):
