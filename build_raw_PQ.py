@@ -33,9 +33,7 @@ def get_combined_targets():
                 if 'KOSDAQ150' in df_mst.columns:
                     cond |= (df_mst['KOSDAQ150'] == 'Y')
                 
-                # 만약 위 두 조건으로도 부족하다면, 시장 전체를 가져오는 대안 (선택 사항)
-                # cond |= df_mst['시장구분'].isin(['STK', 'KSQ'])
-                
+                # [수정] 전처리는 kis_auth에 일임하므로 원본 리스트를 추출
                 idx_tickers = df_mst[cond]['단축코드'].unique().tolist()
                 print(f"   - 필터링 결과 ('Y' 기준): {len(idx_tickers)} 건")
         
@@ -50,7 +48,8 @@ def get_combined_targets():
         
         final_list = list(set(idx_tickers + gsheet_tickers))
         print(f"🚀 최종 합계: {len(final_list)} 건")
-        return [str(t).strip() for t in final_list if t]
+        # 빈 값만 필터링하고 공백 제거/zfill은 kis_auth에 맡깁니다.
+        return [str(t) for t in final_list if t]
         
     except Exception as e:
         print(f"❌ [ERROR] get_combined_targets 실패: {str(e)}")
@@ -59,7 +58,7 @@ def get_combined_targets():
 def fetch_daily_price(ticker, target_date):
     try:
         # GEMS 표준 함수는 (DataFrame, Response) 형태의 튜플을 반환합니다.
-        # GEMS 표준 함수 호출
+        # GEMS 표준 함수 호출 (이제 내부 _url_fetch에서 인증과 속도를 제어함)
         result = inquire_daily_itemchartprice(
             "real", "J", ticker, target_date, target_date, "D", "1"
         )
@@ -72,8 +71,7 @@ def fetch_daily_price(ticker, target_date):
             # 첫 번째 행 데이터 가져오기
             d = df_res.iloc[0]
             
-            # API 응답 필드명이 대문자인 경우와 소문자인 경우 모두 대응
-            # 딕셔너리의 .get()을 사용하여 키가 없어도 에러가 나지 않게 방어
+            # API 응답 필드명이 대문자인 경우와 소문자인 경우 모두 대응 (기존 유지)
             return {
                 "날짜": target_date, 
                 "종목코드": ticker,
@@ -87,7 +85,7 @@ def fetch_daily_price(ticker, target_date):
             }
             
     except Exception as e:
-        # traceback을 통해 정확히 어디서 에러가 나는지 출력 (디버깅용)
+        # traceback을 통해 정확히 어디서 에러가 나는지 출력 (기존 유지)
         # print(traceback.format_exc()) 
         print(f"⚠️ [{ticker}] 데이터 처리 실패: {str(e)}")
     return None
@@ -95,8 +93,7 @@ def fetch_daily_price(ticker, target_date):
 def main():
     print(f"🚀 {datetime.now()} 프로세스 시작")
     try:
-        # 1. 인증 초기화 (내부 전역 변수에 세팅됨)
-        ka.auth() 
+        # [수정] ka.auth() 삭제 -> inquire_daily_itemchartprice 내부에서 필요 시 자동 호출
         
         # 2. 대상 리스트 확보
         tickers = get_combined_targets()
@@ -112,10 +109,9 @@ def main():
             if res: 
                 collected.append(res)
             
-            # API 제한 방지를 위한 지연
-            time.sleep(0.2) 
+            # [수정] time.sleep(0.2) 삭제 -> kis_auth._url_fetch가 0.12초 간격 자동 관리
 
-        # 4. 저장 로직
+        # 4. 저장 로직 (기존 유지)
         if collected:
             df_new = pd.DataFrame(collected)
             if os.path.exists(SAVE_PATH):
