@@ -2,7 +2,11 @@
 name: KRX Raw Master
 
 on:
-  workflow_dispatch: 
+  schedule:
+    # 한국시간(KST) 매주 토요일 13:00 -> UTC 매주 토요일 04:00
+    # 분 시 일 월 요일
+    - cron: '0 4 * * 6'
+  workflow_dispatch: # 수동 실행 버튼 활성화
 
 jobs:
   build:
