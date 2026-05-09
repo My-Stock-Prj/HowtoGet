@@ -105,13 +105,13 @@ def fetch_daily_price(ticker, target_date, mst_info):
         # 3. 프로그램 매매추이 조회 (FHPPG04650201)
         res_pgm = ka.get_program_trade(ticker, target_date)
         print(f"--- [3. 프로그램 API 응답 JSON] ---\n{json.dumps(res_pgm, indent=2, ensure_ascii=False)}")
-        pgm_list = res_pgm.get('output2', [])
+        pgm_list = res_pgm.get('output', [])
         pgm = ka.AttrDict(pgm_list[0]) if pgm_list else ka.AttrDict({})
 
         # 4. 공매도 일별추이 조회 (FHPST04830000) 추가
         res_shrt = ka.get_short_sale_daily(ticker, target_date)
         print(f"--- [4. 공매도 API 응답 JSON] ---\n{json.dumps(res_shrt, indent=2, ensure_ascii=False)}")
-        shrt_list = res_shrt.get('output', [])
+        shrt_list = res_shrt.get('output2', [])
         shrt = ka.AttrDict(shrt_list[0]) if shrt_list else ka.AttrDict({})
 
         # 5. 대차거래추이 조회 (HHPST074500C0) 추가
