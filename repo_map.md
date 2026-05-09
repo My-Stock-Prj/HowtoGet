@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-09 03:31:41
+- **Generated Date**: 2026-05-09 03:38:26
 - **Status**: Strict Data Integrity Monitoring
 
 ---
@@ -157,6 +157,7 @@
   - `isOK(self)`
   - `printError(self)`
   - `json(self)`
+  - `getBody(self)`
   - `status_code(self)`
 
 ## 📂 Directory: DB
