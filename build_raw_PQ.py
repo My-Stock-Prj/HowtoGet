@@ -70,12 +70,9 @@ def get_combined_targets():
         
 def fetch_daily_price(ticker, target_date, mst_info):
     try:
-        # [수정] GEMS 표준 함수 대신 보강된 kis_auth의 get_daily_price 직접 호출 (수정주가 0 반영)
+        # 1. 일별 차트 시세 조회 (FHKST03010100)
         res = ka.get_daily_price(ticker, target_date, target_date)
-
-        # AttrDict 개선으로 인해 키가 없어도 Crash가 나지 않음
         out1 = res.get('output1', ka.AttrDict({}))
-        # output2는 리스트 형태이므로 첫 번째 요소 접근
         out2_list = res.get('output2', [])
         
         if not out2_list:
@@ -87,8 +84,15 @@ def fetch_daily_price(ticker, target_date, mst_info):
         if d2.stck_bsop_date != target_date:
             return None
 
-        # [14개 칼럼 정밀 매핑]
+        # 2. 투자자 매매동향 조회 (FHPTJ04160001) 추가
+        res_inv = ka.get_investor_trade(ticker, target_date)
+        # 투자자 데이터는 output2 리스트의 첫 번째 항목(당일)을 참조
+        inv_list = res_inv.get('output2', [])
+        inv = ka.AttrDict(inv_list[0]) if inv_list else ka.AttrDict({})
+
+        # [28개 칼럼 정밀 매핑]
         return {
+            # --- 시세 데이터 (기존 14개) ---
             "날짜": target_date,
             "종목코드": ticker,
             "종목명": mst_info.get("종목명", ""),
@@ -102,7 +106,23 @@ def fetch_daily_price(ticker, target_date, mst_info):
             "회전율": ka.to_float(out1.vol_tnrt),
             "상장주수": ka.to_int(out1.lstn_stcn),
             "락구분": d2.flng_cls_code,
-            "재평가사유": d2.revl_issu_reas
+            "재평가사유": d2.revl_issu_reas,
+            
+            # --- 투자자 매매동향 (신규 14개 - 순서 준수) ---
+            "외국인순매수수량": ka.to_int(inv.frgn_ntby_qty),
+            "외국인순매수대금": ka.to_int(inv.frgn_ntby_tr_pbmn),
+            "기관계순매수수량": ka.to_int(inv.orgn_ntby_qty),
+            "기관계순매수대금": ka.to_int(inv.orgn_ntby_tr_pbmn),
+            "기금순매수수량": ka.to_int(inv.fund_ntby_qty),
+            "기금순매수대금": ka.to_int(inv.fund_ntby_tr_pbmn),
+            "개인순매수수량": ka.to_int(inv.prsn_ntby_qty),
+            "개인순매수대금": ka.to_int(inv.prsn_ntby_tr_pbmn),
+            "증권순매수수량": ka.to_int(inv.scrt_ntby_qty),
+            "투자신탁순매수수량": ka.to_int(inv.ivtr_ntby_qty),
+            "사모펀드순매수수량": ka.to_int(inv.pe_fund_ntby_vol),
+            "은행순매수수량": ka.to_int(inv.bank_ntby_qty),
+            "보험순매수수량": ka.to_int(inv.insu_ntby_qty),
+            "종금순매수수량": ka.to_int(inv.mrbn_ntby_qty)
         }
             
     except Exception as e:
@@ -119,7 +139,6 @@ def main():
             return
 
         # 2. 데이터 수집
-        # [참고] 날짜는 실제 수집 시점에 맞게 조정 필요
         target_date = "20260504"
         print(f"📅 수집 기준 날짜: {target_date}")
         
@@ -141,9 +160,14 @@ def main():
         if collected:
             df_new = pd.DataFrame(collected)
             
-            # 칼럼 순서 보장
-            cols = ["날짜", "종목코드", "종목명", "구분(출처)", "종가", "시가", "고가", "저가", "거래량", "거래대금", "회전율", "상장주수", "락구분", "재평가사유"]
-            df_new = df_new[cols]
+            # 칼럼 순서 보장 (기존 14개 + 신규 14개)
+            base_cols = ["날짜", "종목코드", "종목명", "구분(출처)", "종가", "시가", "고가", "저가", "거래량", "거래대금", "회전율", "상장주수", "락구분", "재평가사유"]
+            investor_cols = [
+                "외국인순매수수량", "외국인순매수대금", "기관계순매수수량", "기관계순매수대금", "기금순매수수량", "기금순매수대금",
+                "개인순매수수량", "개인순매수대금", "증권순매수수량", "투자신탁순매수수량", "사모펀드순매수수량", "은행순매수수량",
+                "보험순매수수량", "종금순매수수량"
+            ]
+            df_new = df_new[base_cols + investor_cols]
 
             if os.path.exists(SAVE_PATH):
                 df_old = pd.read_parquet(SAVE_PATH)
