@@ -160,8 +160,8 @@ def get_stock_base_info(stock_code):
     tr_id = "CTPF1101R"
     
     params = {
-        "PRDT_TYPE_CD": "300", # 주식/ETF/ETN 통합 구분
-        "PDNO": stock_code     # 종목코드 (6자리)
+        "PRDT_TYPE_CD": "300",
+        "PDNO": str(stock_code).strip() # 공백 제거 및 문자열 확정
     }
 
     # 3. 내부 엔진(_url_fetch)을 통해 호출
