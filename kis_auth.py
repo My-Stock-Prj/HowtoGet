@@ -230,7 +230,7 @@ def get_stock_base_info(stock_code):
 def get_daily_price(stock_code, start_date, end_date):
     """
     국내주식 일별 차트 시세 조회 (FHKST03010100)
-    - 수정주가 미반영 (FID_ORG_ADJ_PRC: 0) 고정
+    - 수정주가 미반영 (FID_ORG_ADJ_PRC: 1) 고정
     """
     url = "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
     tr_id = "FHKST03010100"
