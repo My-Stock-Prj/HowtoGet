@@ -1,10 +1,11 @@
-# 이 코드는 build_raw_PQ.py
+# build_raw_PQ.py 간략버전
 # -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
 import os
 import time
 import traceback
+import json  # [디버깅 추가]
 from datetime import datetime
 import kis_auth as ka  # 보강된 kis_auth 사용
 import gspread
@@ -60,7 +61,13 @@ def get_combined_targets():
         
         # 최종 합계 및 중복 제거
         all_tickers = list(set([str(t).strip().zfill(6) for t in (idx_tickers + gsheet_tickers) if t]))
-        print(f"🚀 최종 수집 대상: {len(all_tickers)} 건")
+        
+        # [수정] 테스트를 위해 삼성전자(005930), 카카오게임즈(293490)로 한정
+        test_targets = ["005930", "293490"]
+        all_tickers = [t for t in all_tickers if t in test_targets]
+        if not all_tickers: all_tickers = test_targets # 리스트에 없더라도 강제 삽입
+        
+        print(f"🚀 최종 수집 대상(테스트): {len(all_tickers)} 건 {all_tickers}")
         
         return all_tickers, mst_info_map
         
@@ -70,47 +77,57 @@ def get_combined_targets():
         
 def fetch_daily_price(ticker, target_date, mst_info):
     try:
+        print(f"\n==================== [DEBUG: {ticker}] ====================")
+        
         # 1. 일별 차트 시세 조회 (FHKST03010100)
         res = ka.get_daily_price(ticker, target_date, target_date)
+        print(f"--- [1. 시세 API 응답 JSON] ---\n{json.dumps(res, indent=2, ensure_ascii=False)}")
         out1 = res.get('output1', ka.AttrDict({}))
         out2_list = res.get('output2', [])
         
         if not out2_list:
+            print(f"⚠️ {ticker} : output2 데이터가 없습니다.")
             return None
             
         d2 = ka.AttrDict(out2_list[0])
         
         # [검증] 날짜 일치 여부 확인
         if d2.stck_bsop_date != target_date:
+            print(f"⚠️ 날짜 불일치: {d2.stck_bsop_date} != {target_date}")
             return None
 
         # 2. 투자자 매매동향 조회 (FHPTJ04160001)
         res_inv = ka.get_investor_trade(ticker, target_date)
+        print(f"--- [2. 투자자 API 응답 JSON] ---\n{json.dumps(res_inv, indent=2, ensure_ascii=False)}")
         inv_list = res_inv.get('output2', [])
         inv = ka.AttrDict(inv_list[0]) if inv_list else ka.AttrDict({})
 
         # 3. 프로그램 매매추이 조회 (FHPPG04650201)
         res_pgm = ka.get_program_trade(ticker, target_date)
-        pgm_list = res_pgm.get('output', [])  # [수정] output2 -> output (한달치 리스트 대응)
+        print(f"--- [3. 프로그램 API 응답 JSON] ---\n{json.dumps(res_pgm, indent=2, ensure_ascii=False)}")
+        pgm_list = res_pgm.get('output', [])
         pgm = ka.AttrDict(pgm_list[0]) if pgm_list else ka.AttrDict({})
 
-        # 4. 공매도 일별추이 조회 (FHPST04830000)
+        # 4. 공매도 일별추이 조회 (FHPST04830000) 추가
         res_shrt = ka.get_short_sale_daily(ticker, target_date)
-        shrt_list = res_shrt.get('output2', [])  # [수정] output -> output2
+        print(f"--- [4. 공매도 API 응답 JSON] ---\n{json.dumps(res_shrt, indent=2, ensure_ascii=False)}")
+        shrt_list = res_shrt.get('output2', [])
         shrt = ka.AttrDict(shrt_list[0]) if shrt_list else ka.AttrDict({})
 
-        # 5. 대차거래추이 조회 (HHPST074500C0)
+        # 5. 대차거래추이 조회 (HHPST074500C0) 추가
         res_loan = ka.get_loan_trans_daily(ticker, target_date)
+        print(f"--- [5. 대차거래 API 응답 JSON] ---\n{json.dumps(res_loan, indent=2, ensure_ascii=False)}")
         loan_list = res_loan.get('output', [])
         loan = ka.AttrDict(loan_list[0]) if loan_list else ka.AttrDict({})
 
-        # 6. 신용잔고추이 조회 (FHPST04760000)
+        # 6. 신용잔고추이 조회 (FHPST04760000) 추가
         res_cred = ka.get_credit_balance_daily(ticker, target_date)
+        print(f"--- [6. 신용잔고 API 응답 JSON] ---\n{json.dumps(res_cred, indent=2, ensure_ascii=False)}")
         cred_list = res_cred.get('output', [])
         cred = ka.AttrDict(cred_list[0]) if cred_list else ka.AttrDict({})
 
         # [36개 칼럼 정밀 매핑]
-        return {
+        data = {
             # --- 시세 데이터 (14개) ---
             "날짜": target_date,
             "종목코드": ticker,
@@ -144,8 +161,8 @@ def fetch_daily_price(ticker, target_date, mst_info):
             "종금순매수수량": ka.to_int(inv.mrbn_ntby_qty),
 
             # --- 프로그램 매매추이 (2개) ---
-            "프로그램순매수수량": ka.to_int(pgm.whol_smtn_ntby_qty),      # [수정] acml_vol -> 실채 순매수 키로 변경
-            "프로그램순매수대금": ka.to_int(pgm.whol_smtn_ntby_tr_pbmn), # [수정] acml_tr_pbmn -> 실채 순매수 키로 변경
+            "프로그램순매수수량": ka.to_int(pgm.whol_smtn_ntby_qty),      # 전체 합계 순매수 수량
+            "프로그램순매수대금": ka.to_int(pgm.whol_smtn_ntby_tr_pbmn), # 전체 합계 순매수 대금
 
             # --- 공매도/대차/신용 (신규 6개) ---
             "공매도체결수량": ka.to_int(shrt.ssts_cntg_qty),
@@ -155,10 +172,14 @@ def fetch_daily_price(ticker, target_date, mst_info):
             "전체융자잔고주수": ka.to_int(cred.whol_loan_rmnd_stcn),
             "전체융자잔고비율": ka.to_float(cred.whol_loan_rmnd_rate)
         }
+        
+        print(f"✅ [{ticker}] 매핑 결과 샘플(종가/개인순매수/공매도체결): {data['종가']}/{data['개인순매수수량']}/{data['공매도체결수량']}")
+        print("============================================================")
+        return data
             
     except Exception as e:
         print(f"⚠️ [{ticker}] 데이터 처리 실패: {str(e)}")
-    return None
+        return None
 
 def main():
     print(f"🚀 {datetime.now()} 프로세스 시작")
@@ -221,6 +242,9 @@ def main():
     except Exception as e:
         print(f"❌ [CRITICAL ERROR] {str(e)}")
         traceback.print_exc()
+
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()
