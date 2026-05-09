@@ -56,9 +56,13 @@ def augment_master_via_api(df):
         raw_code = str(row['단축코드']).strip()
         code = raw_code.zfill(6)
         name = row['종목명']
+        # [신규 삽입] 숫자가 아닌 종목코드(펀드 등) 건너뛰기
+        if not code.isdigit():
+            # print(f"   [SKIP] {code} | {name} | 숫자가 아닌 종목코드") # 필요 시 주석 해제
+            continue
         
         try:
-            # 🔍 API 호출
+            # 🔍 API 호출(이제 숫자 코드가 확실한 경우에만 호출됨)
             res = ka.get_stock_base_info(code)
             
             # ---------------------------------------------------------
