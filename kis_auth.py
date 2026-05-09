@@ -160,30 +160,26 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
 
 def get_stock_base_info(stock_code):
     """
-    [강제 삽입 버전] 종목정보 상세조회 (CTPF1101R)
+    국내주식 종목정보 상세조회 (CTPF1101R)
     """
-    # 1. URL 설정 (국내주식 종목정보 상세조회)
-    url = f"{TREnv.my_url}/uapi/domestic-stock/v1/quotations/search-stock-info"
+    global _env
+    if _env is None: _env = getTREnv()
     
-    # 2. 헤더 설정
+    # 1. URL 설정
+    url = "/uapi/domestic-stock/v1/quotations/search-stock-info"
+    
+    # 2. 헤더 설정 (헤더는 _url_fetch에서 자동으로 채워주므로 빈 딕셔너리만 선언해도 됨)
     tr_id = "CTPF1101R"
-    headers = {
-        "Content-Type": "application/json",
-        "authorization": f"Bearer {TREnv.my_token}",
-        "appkey": TREnv.my_app,
-        "appsecret": TREnv.my_sec,
-        "tr_id": tr_id,
-        "custtype": "P"
-    }
+    headers = {"tr_id": tr_id}
 
-    # 3. 파라미터 강제 삽입 (이 부분이 핵심!)
-    # 서버가 요구하는 정확한 키 'PDNO'를 사용해야 합니다.
+    # 3. 파라미터 설정 (이 부분이 가장 중요!)
     params = {
         "PRDT_TYPE_CD": "300",
         "PDNO": str(stock_code).strip().zfill(6)
     }
 
-    # 4. 호출 (GET 방식은 params 인자를 사용)
-    res = _url_fetch(url, tr_id, headers, params)
+    # 4. _url_fetch 호출 (is_post=False 이므로 GET 방식으로 전송됨)
+    res = _url_fetch(url, headers, tr_id, params, is_post=False)
     
-    return res
+    # res 자체가 resp 객체이므로 getBody()를 호출하여 결과 반환
+    return res.getBody()
