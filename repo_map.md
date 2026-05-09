@@ -1,5 +1,5 @@
 # 🗺️ Project Repository Map (Security-First)
-- **Generated Date**: 2026-05-09 15:52:14
+- **Generated Date**: 2026-05-09 15:54:48
 - **Status**: Strict Data Integrity Monitoring
 
 ---
@@ -17,6 +17,8 @@
    - `download_and_parse(m_type, m_code)`
 ### 📄 `check_PY.py`
    - `check_kosdaq_mst_reverse()`
+### 📄 `check_parquet.py`
+   - `sync_to_dpq(filename)` - *Parquet 데이터를 읽어 구글 시트 'my' 파일의 'dpq' 시트에 덮어쓰기*
 ### 📄 `domestic_stock_functions.py`
    - `after_hour_balance(fid_input_price_1, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_rank_sort_cls_code, fid_div_cls_code, fid_input_iscd, fid_trgt_exls_cls_code, fid_trgt_cls_code, fid_vol_cnt, fid_input_price_2, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
    - `bulk_trans_num(fid_aply_rang_prc_2, fid_cond_mrkt_div_code, fid_cond_scr_div_code, fid_input_iscd, fid_rank_sort_cls_code, fid_div_cls_code, fid_input_price_1, fid_aply_rang_prc_1, fid_input_iscd_2, fid_trgt_exls_cls_code, fid_trgt_cls_code, fid_vol_cnt, tr_cont, dataframe, depth, max_depth)` - *[국내주식] 순위분석 *
