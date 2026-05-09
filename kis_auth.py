@@ -27,13 +27,28 @@ class AttrDict(dict):
         super().__init__(mapping)
 
     def __getattr__(self, key):
-        try:
-            return self[key]
-        except KeyError:
-            raise AttributeError(f"AttrDict에 '{key}' 키가 존재하지 않습니다.")
+        # [수정] 키가 존재하지 않을 경우 에러를 발생시키지 않고 빈 AttrDict를 반환 (Crash 방지)
+        return self.get(key, AttrDict({}))
 
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+# [추가] 수치 데이터 정제 및 소수점 제어 유틸리티
+def to_int(val):
+    try:
+        if val is None or str(val).strip() == "": return 0
+        # 콤마 제거 및 소수점이 포함된 경우 정수형 변환 전 처리
+        return int(float(str(val).replace(',', '')))
+    except:
+        return 0
+
+def to_float(val, precision=2):
+    try:
+        if val is None or str(val).strip() == "": return 0.0
+        # 콤마 제거 및 지정된 소수점 자릿수(기본 2자리)에서 반올림
+        return round(float(str(val).replace(',', '')), precision)
+    except:
+        return 0.0
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -142,10 +157,13 @@ def _url_fetch(url, headers, tr_id, params=None, is_post=False):
         if params is not None:
             if isinstance(params, str):
                 try: params = json.loads(params)
-                except: pass
+            except: pass
             
-            if isinstance(params, dict) and "PDNO" in params:
-                params["PDNO"] = str(params["PDNO"]).strip().zfill(6)
+            # [수정] 종목코드 자동 정제 범위 확장 (PDNO, FID_INPUT_ISCD 등 범용 키 적용)
+            if isinstance(params, dict):
+                for k in ["PDNO", "FID_INPUT_ISCD", "FID_INPUT_SVR_ISCD", "ISCD"]:
+                    if k in params:
+                        params[k] = str(params[k]).strip().zfill(6)
 
         # 통신 수행
         if is_post:
@@ -204,5 +222,26 @@ def get_stock_base_info(stock_code):
     }
 
     # _url_fetch에서 인증, 정제, 속도제한을 모두 처리하므로 호출부만 남깁니다.
+    res = _url_fetch(url, {}, tr_id, params, is_post=False)
+    return res.getBody()
+
+# [추가] 일별 차트 시세 조회 전용 함수 (사용자 요청 정책 반영)
+def get_daily_price(stock_code, start_date, end_date):
+    """
+    국내주식 일별 차트 시세 조회 (FHKST03010100)
+    - 수정주가 미반영 (FID_ORG_ADJ_PRC: 0) 고정
+    """
+    url = "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
+    tr_id = "FHKST03010100"
+    
+    params = {
+        "FID_COND_MRKT_DIV_CODE": "J",
+        "FID_INPUT_ISCD": stock_code,
+        "FID_INPUT_DATE_1": start_date,
+        "FID_INPUT_DATE_2": end_date,
+        "FID_PERIOD_DIV_CODE": "D",
+        "FID_ORG_ADJ_PRC": "0"  # 수정주가 미반영 정책 준수
+    }
+    
     res = _url_fetch(url, {}, tr_id, params, is_post=False)
     return res.getBody()
