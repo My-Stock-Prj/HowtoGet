@@ -53,4 +53,4 @@ jobs:
           # 환경변수 설정
           DATA_BASE_DIR: './DB'
           # kis_auth.py의 get_gcp_creds()가 사용하는 환경 변수명으로 매핑
-          GCP_CREDENTIALS: ${{ secrets.GCP_KEYS }}
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
