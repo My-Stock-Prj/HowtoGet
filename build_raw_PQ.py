@@ -26,7 +26,7 @@ def get_combined_targets():
             
             if not df_mst.empty:
                 # [라벨링 로직] K200 > K150 > MY 순으로 구분값 부여
-                cond_k200 = (df_mst.get('KOSPI200섹터업종') == 'Y')
+                cond_k200 = (df_mst.get('KOSPI200') == 'Y')
                 cond_k150 = (df_mst.get('KOSDAQ150') == 'Y')
                 
                 # 타겟 추출
@@ -36,7 +36,7 @@ def get_combined_targets():
                 for _, row in df_mst.iterrows():
                     code = str(row['단축코드']).strip().zfill(6)
                     label = "MY"
-                    if row.get('KOSPI200섹터업종') == 'Y': label = "K200"
+                    if row.get('KOSPI200') == 'Y': label = "K200"
                     elif row.get('KOSDAQ150') == 'Y': label = "K150"
                     
                     mst_info_map[code] = {
