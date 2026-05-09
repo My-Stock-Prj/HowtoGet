@@ -316,7 +316,8 @@ def get_loan_trans_daily(stock_code, target_date):
         "FID_COND_MRKT_DIV_CODE": "J",
         "FID_INPUT_ISCD": stock_code,
         "FID_INPUT_DATE_1": target_date,
-        "FID_INPUT_DATE_2": target_date
+        "FID_INPUT_DATE_2": target_date,
+        "mrkt_div_cls_code": "J"
     }
     res = _url_fetch(url, {}, tr_id, params, is_post=False)
     return res.getBody()
