@@ -20,26 +20,29 @@ def get_base_mst():
         url = f"https://new.real.download.dws.co.kr/common/master/{m_type}_code.mst.zip"
         file_zip = f"{m_type}.zip"
         print(f"📡 [{m_code}] MST 파일 다운로드 중...")
-        urllib.request.urlretrieve(url, file_zip)
+        urllib.request.request.urlretrieve(url, file_zip)
         with zipfile.ZipFile(file_zip) as z:
             z.extractall()
         os.remove(file_zip)
         
         file_name = f"{m_type}_code.mst"
         data = []
-        p2_len = 228 if m_code == "STK" else 222
         with open(file_name, mode="r", encoding="cp949") as f:
             for row in f:
-                code, std_code, name = row[0:9].strip(), row[9:21].strip(), row[21:61].strip()
+                # 줄바꿈 문자를 제거하여 길이를 표준화 (후방 인덱싱의 핵심)
+                line = row.strip()
+                if not line: continue
+
+                # 기존 컬럼 추출 로직 유지
+                code, std_code, name = line[0:9].strip(), line[9:21].strip(), line[21:61].strip()
                 
-                # 개선 로직: 칼럼 분리 및 정확한 인덱스(41) 참조
+                # 개선 로직: 칼럼 분리 및 후방 인덱스(-186) 참조
                 kospi200_val = 'N'
                 kosdaq150_val = 'N'
                 
                 if m_code == "KSQ":
-                    part2 = row[-p2_len:]
-                    # 명세서 기준 Index 41번(42번째 칸)의 'Y' 여부 확인
-                    if len(part2) > 41 and part2[41:42] == 'Y':
+                    # 분석 결과 확정된 절대 좌표: 뒤에서 186번째 칸
+                    if len(line) >= 186 and line[-186] == 'Y':
                         kosdaq150_val = 'Y'
                 
                 data.append({
