@@ -1,5 +1,5 @@
 # raw_master.yml
-name: KRX Raw Master
+name: raw_weekly_KRX
 
 on:
   schedule:
