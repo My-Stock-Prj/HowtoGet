@@ -1,4 +1,4 @@
-# 이 코드는 build_raw_PQ.py full버전
+# 이 코드는 build_raw_PQ.py full > 20일 확장
 # -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
@@ -91,12 +91,12 @@ def fetch_daily_price(ticker, target_date, mst_info):
 
         # 3. 프로그램 매매추이 조회 (FHPPG04650201)
         res_pgm = ka.get_program_trade(ticker, target_date)
-        pgm_list = res_pgm.get('output', [])  # [수정] output2 -> output (한달치 리스트 대응)
+        pgm_list = res_pgm.get('output', [])  # [수정 반영] output2 -> output
         pgm = ka.AttrDict(pgm_list[0]) if pgm_list else ka.AttrDict({})
 
         # 4. 공매도 일별추이 조회 (FHPST04830000)
         res_shrt = ka.get_short_sale_daily(ticker, target_date)
-        shrt_list = res_shrt.get('output2', [])  # [수정] output -> output2
+        shrt_list = res_shrt.get('output2', []) # [수정 반영] output -> output2
         shrt = ka.AttrDict(shrt_list[0]) if shrt_list else ka.AttrDict({})
 
         # 5. 대차거래추이 조회 (HHPST074500C0)
@@ -144,8 +144,8 @@ def fetch_daily_price(ticker, target_date, mst_info):
             "종금순매수수량": ka.to_int(inv.mrbn_ntby_qty),
 
             # --- 프로그램 매매추이 (2개) ---
-            "프로그램순매수수량": ka.to_int(pgm.whol_smtn_ntby_qty),      # [수정] acml_vol -> 실채 순매수 키로 변경
-            "프로그램순매수대금": ka.to_int(pgm.whol_smtn_ntby_tr_pbmn), # [수정] acml_tr_pbmn -> 실채 순매수 키로 변경
+            "프로그램순매수수량": ka.to_int(pgm.whol_smtn_ntby_qty),
+            "프로그램순매수대금": ka.to_int(pgm.whol_smtn_ntby_tr_pbmn),
 
             # --- 공매도/대차/신용 (신규 6개) ---
             "공매도체결수량": ka.to_int(shrt.ssts_cntg_qty),
@@ -161,7 +161,7 @@ def fetch_daily_price(ticker, target_date, mst_info):
     return None
 
 def main():
-    print(f"🚀 {datetime.now()} 프로세스 시작")
+    print(f"🚀 {datetime.now()} 프로세스 시작 (최근 20거래일 소급 수집)")
     try:
         # 1. 대상 리스트 및 마스터 맵 확보
         tickers, mst_info_map = get_combined_targets()
@@ -169,29 +169,37 @@ def main():
             print("⚠️ 수집할 종목이 없습니다.")
             return
 
-        # 2. 데이터 수집
-        target_date = "20260504"
-        print(f"📅 수집 기준 날짜: {target_date}")
+        # 2. 최근 20영업일(평일) 날짜 리스트 생성
+        end_dt = datetime.now().strftime('%Y%m%d')
+        date_list = pd.bdate_range(end=end_dt, periods=20).strftime('%Y%m%d').tolist()
+        print(f"📅 수집 기간: {date_list[0]} ~ {date_list[-1]} (총 {len(date_list)}영업일)")
         
         collected = []
-        total = len(tickers)
+        total_tickers = len(tickers)
         
-        for i, ticker in enumerate(tickers):
-            # 개별 종목의 마스터 정보 가져오기
-            mst_info = mst_info_map.get(ticker, {"종목명": "", "구분": "MY"})
+        # 3. 이중 루프: 날짜별 -> 종목별 수집
+        for target_date in date_list:
+            print(f"📂 {target_date} 수집 시작...")
+            day_count = 0
             
-            res = fetch_daily_price(ticker, target_date, mst_info)
-            if res: 
-                collected.append(res)
+            for i, ticker in enumerate(tickers):
+                mst_info = mst_info_map.get(ticker, {"종목명": "", "구분": "MY"})
+                
+                res = fetch_daily_price(ticker, target_date, mst_info)
+                if res: 
+                    collected.append(res)
+                    day_count += 1
+                
+                if (i + 1) % 50 == 0:
+                    print(f"   ⏳ {target_date} 진행 중... ({i+1}/{total_tickers})")
             
-            if (i + 1) % 50 == 0:
-                print(f"   ⏳ 진행 중... ({i+1}/{total})")
+            print(f"✅ {target_date} 완료: {day_count}건 수집됨")
 
-        # 3. 저장 로직
+        # 4. 저장 로직
         if collected:
             df_new = pd.DataFrame(collected)
             
-            # 칼럼 순서 보장 (기존 30개 + 신규 6개)
+            # 칼럼 순서 보장
             base_cols = ["날짜", "종목코드", "종목명", "구분(출처)", "종가", "시가", "고가", "저가", "거래량", "거래대금", "회전율", "상장주수", "락구분", "재평가사유"]
             investor_cols = [
                 "외국인순매수수량", "외국인순매수대금", "기관계순매수수량", "기관계순매수대금", "기금순매수수량", "기금순매수대금",
@@ -205,16 +213,16 @@ def main():
 
             if os.path.exists(SAVE_PATH):
                 df_old = pd.read_parquet(SAVE_PATH)
-                # 기존 데이터와 병합 후 중복 제거 (날짜, 종목코드 기준)
+                # 기존 데이터와 병합 후 중복 제거 (날짜, 종목코드 기준 최신값 유지)
                 df_final = pd.concat([df_old, df_new]).drop_duplicates(subset=['날짜', '종목코드'], keep='last')
             else:
                 df_final = df_new
             
-            # 상위 폴더 생성 보장
+            # 상위 폴더 생성 및 저장
             os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
             df_final.to_parquet(SAVE_PATH, index=False)
             print(f"✅ 저장 완료: {SAVE_PATH}")
-            print(f"📊 총 데이터: {len(df_final)} rows (금일 {len(collected)}건 추가/갱신)")
+            print(f"📊 최종 데이터 총계: {len(df_final)} rows")
         else:
             print("ℹ️ 수집된 신규 데이터가 없습니다.")
 
