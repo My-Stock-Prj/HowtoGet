@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pykrx pandas tqdm pyarrow
+          pip install --upgrade pykrx pandas tqdm pyarrow
 
       - name: Run ETF Collector
         run: python build_raw_ETF.py
