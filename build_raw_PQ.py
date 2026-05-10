@@ -90,7 +90,7 @@ def fetch_daily_price(ticker, target_date, mst_info):
         return {
             "날짜": target_date, "종목코드": ticker, "종목명": mst_info.get("종목명", ""), "구분(출처)": mst_info.get("구분", "MY"),
             "종가": ka.to_int(d2.stck_clpr), "시가": ka.to_int(d2.stck_oprc), "고가": ka.to_int(d2.stck_hgpr), "저가": ka.to_int(d2.stck_lwpr),
-            "거래량": ka.to_int(out1.acml_vol), "거래대금": ka.to_int(out1.acml_tr_pbmn), "회전율": ka.to_float(out1.vol_tnrt),
+            "거래량": ka.to_int(d2.acml_vol), "거래대금": ka.to_int(d2.acml_tr_pbmn), "회전율": ka.to_float(out1.vol_tnrt),
             "상장주수": ka.to_int(out1.lstn_stcn), "락구분": d2.flng_cls_code, "재평가사유": d2.revl_issu_reas,
             "외국인순매수수량": ka.to_int(inv.frgn_ntby_qty), "외국인순매수대금": ka.to_int(inv.frgn_ntby_tr_pbmn),
             "기관계순매수수량": ka.to_int(inv.orgn_ntby_qty), "기관계순매수대금": ka.to_int(inv.orgn_ntby_tr_pbmn),
