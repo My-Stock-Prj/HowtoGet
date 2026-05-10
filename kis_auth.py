@@ -241,7 +241,7 @@ def get_daily_price(stock_code, start_date, end_date):
         "FID_INPUT_DATE_1": start_date,
         "FID_INPUT_DATE_2": end_date,
         "FID_PERIOD_DIV_CODE": "D",
-        "FID_ORG_ADJ_PRC": "0"  # 수정주가 미반영 정책 준수
+        "FID_ORG_ADJ_PRC": "1"  # 수정주가 미반영 정책 준수
     }
     
     res = _url_fetch(url, {}, tr_id, params, is_post=False)
@@ -261,7 +261,7 @@ def get_investor_trade(stock_code, target_date):
         "FID_INPUT_DATE_1": target_date,
         "FID_INPUT_DATE_2": target_date,
         "FID_PERIOD_DIV_CODE": "D",
-        "FID_ORG_ADJ_PRC": "0",
+        "FID_ORG_ADJ_PRC": "1",
         "FID_ETC_CLS_CODE": "1"
     }
     
@@ -282,7 +282,7 @@ def get_program_trade(stock_code, target_date):
         "FID_INPUT_DATE_1": target_date,
         "FID_INPUT_DATE_2": target_date,
         "FID_PERIOD_DIV_CODE": "D",
-        "FID_ORG_ADJ_PRC": "0"
+        "FID_ORG_ADJ_PRC": "1"
     }
     
     res = _url_fetch(url, {}, tr_id, params, is_post=False)
@@ -335,7 +335,7 @@ def get_credit_balance_daily(stock_code, target_date):
         "FID_INPUT_ISCD": stock_code,
         "FID_INPUT_DATE_1": target_date,
         "FID_INPUT_DATE_2": target_date,
-        "FID_ORG_ADJ_PRC": "0"            # 추가
+        "FID_ORG_ADJ_PRC": "1"            # 추가
     }
     res = _url_fetch(url, {}, tr_id, params, is_post=False)
     return res.getBody()
