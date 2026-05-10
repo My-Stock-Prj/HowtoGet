@@ -1,10 +1,10 @@
-# 이 코드는 build_raw_PQ.py full > 20일 확장
 # -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
 import os
 import time
 import traceback
+import sys  # 무결성 강제 종료를 위해 추가
 from datetime import datetime
 import kis_auth as ka  # 보강된 kis_auth 사용
 import gspread
@@ -55,17 +55,21 @@ def get_combined_targets():
 
 def fetch_daily_price(ticker, target_date, mst_info):
     """
-    kis_auth.py를 수정하지 않고 기존의 단일 일자 조회 방식을 그대로 사용
+    기존 로직 엄격 유지 + 데이터 무결성 체크 추가
     """
     try:
-        # 1. 일별 차트 시세 조회 (인자 2개 전달 시 kis_auth가 1개만 받더라도 오류 안 나게 대응)
-        # 만약 kis_auth가 (ticker, date)만 받는다면 아래 호출은 그대로 동작함
+        # 1. 일별 차트 시세 조회
         res = ka.get_daily_price(ticker, target_date, target_date)
         out1 = res.get('output1', ka.AttrDict({}))
         out2_list = res.get('output2', [])
-        if not out2_list: return None
+        
+        # [데이터 무결성 강제] 핵심 시세 데이터가 없으면 None이 아닌 에러 발생
+        if not out2_list: 
+            raise ValueError(f"시세 데이터(output2)가 비어있음")
+            
         d2 = ka.AttrDict(out2_list[0])
-        if d2.stck_bsop_date != target_date: return None
+        if d2.stck_bsop_date != target_date: 
+            raise ValueError(f"조회일 불일치(요청:{target_date}, 응답:{d2.stck_bsop_date})")
 
         # 2. 투자자 매매동향
         res_inv = ka.get_investor_trade(ticker, target_date)
@@ -75,7 +79,7 @@ def fetch_daily_price(ticker, target_date, mst_info):
         res_pgm = ka.get_program_trade(ticker, target_date)
         pgm = ka.AttrDict(res_pgm.get('output', [{}])[0])
 
-        # 4. 공매도 일별추이 (인자 2개 대응)
+        # 4. 공매도 일별추이
         res_shrt = ka.get_short_sale_daily(ticker, target_date, target_date)
         shrt = ka.AttrDict(res_shrt.get('output2', [{}])[0])
 
@@ -83,10 +87,11 @@ def fetch_daily_price(ticker, target_date, mst_info):
         res_loan = ka.get_loan_trans_daily(ticker, target_date)
         loan = ka.AttrDict(res_loan.get('output', [{}])[0])
 
-        # 6. 신용잔고추이 (인자 2개 대응)
+        # 6. 신용잔고추이
         res_cred = ka.get_credit_balance_daily(ticker, target_date, target_date)
         cred = ka.AttrDict(res_cred.get('output', [{}])[0])
 
+        # [리턴 딕셔너리 구조 원본과 100% 동일]
         return {
             "날짜": target_date, "종목코드": ticker, "종목명": mst_info.get("종목명", ""), "구분(출처)": mst_info.get("구분", "MY"),
             "종가": ka.to_int(d2.stck_clpr), "시가": ka.to_int(d2.stck_oprc), "고가": ka.to_int(d2.stck_hgpr), "저가": ka.to_int(d2.stck_lwpr),
@@ -105,46 +110,52 @@ def fetch_daily_price(ticker, target_date, mst_info):
             "전체융자잔고주수": ka.to_int(cred.whol_loan_rmnd_stcn), "전체융자잔고비율": ka.to_float(cred.whol_loan_rmnd_rate)
         }
     except Exception as e:
-        print(f"⚠️ [{ticker}] 데이터 처리 실패: {str(e)}")
-        return None
+        print(f"\n❌ [{ticker}] 수집 중단: {str(e)}")
+        raise  # 메인 루프에서 즉시 멈추도록 예외 전파
 
 def main():
-    print(f"🚀 {datetime.now()} 프로세스 시작 (2차: 최근 10일 분할 수집 - kis_auth 유지형)")
+    print(f"🚀 {datetime.now()} 프로세스 시작 (최근 20일 확장 수집형)")
     try:
         tickers, mst_info_map = get_combined_targets()
         if not tickers: return
 
-        # 1. 최근 20영업일 생성 및 최근 10일(2차 대상) 추출
+        # 1. 최근 20영업일 생성 (전체 기간 수집을 위해 보강)
         full_date_list = pd.bdate_range(end=datetime.now(), periods=20).strftime('%Y%m%d').tolist()
-        recent_10_days = full_date_list[10:] 
         
-        # 2. 남은 10일을 2일씩 5번으로 나누기 (Chunking)
-        chunk_size = 2
-        date_chunks = [recent_10_days[i:i + chunk_size] for i in range(0, len(recent_10_days), chunk_size)]
-        
+        # [스마트 스킵용 기존 데이터 로딩]
+        existing_keys = set()
+        if os.path.exists(SAVE_PATH):
+            df_existing = pd.read_parquet(SAVE_PATH, columns=['날짜', '종목코드'])
+            existing_keys = set(df_existing['날짜'] + "_" + df_existing['종목코드'])
+            print(f"📊 기존 데이터 {len(existing_keys)}건 로드 완료. 중복 건너뜀 활성화.")
+
         total_tickers = len(tickers)
         
-        # 3. 회차별(2일씩) 순차적 실행
-        for idx, chunk in enumerate(date_chunks):
-            collected = [] # 각 회차별로 수집된 데이터를 저장
-            print(f"\n🔄 [회차 {idx+1}/5] 구간 수집 시작: {chunk[0]} ~ {chunk[-1]}")
+        # 2. 날짜 루프 (기존의 Chunk 구조를 유지하면서 '하루 단위 저장' 반영)
+        for target_date in full_date_list:
+            collected_today = []
+            print(f"\n📅 [기준일: {target_date}] 수집 시작")
             
-            for target_date in chunk:
-                print(f"📂 {target_date} 데이터 수집 중...")
-                day_count = 0
-                for i, ticker in enumerate(tickers):
-                    mst_info = mst_info_map.get(ticker, {"종목명": "", "구분": "MY"})
-                    res = fetch_daily_price(ticker, target_date, mst_info)
-                    if res:
-                        collected.append(res)
-                        day_count += 1
-                    if (i + 1) % 50 == 0:
-                        print(f"   ⏳ {target_date} 진행 중... ({i+1}/{total_tickers})")
-                print(f"✅ {target_date} 완료: {day_count}건 수집")
+            for i, ticker in enumerate(tickers):
+                # [스마트 스킵]
+                if f"{target_date}_{ticker}" in existing_keys:
+                    continue
+                
+                # [진행상황 표시]
+                print(f"\r   ⏳ {target_date} ({i+1}/{total_tickers}) [{ticker}] 수집 중...", end="", flush=True)
+                
+                mst_info = mst_info_map.get(ticker, {"종목명": "", "구분": "MY"})
+                res = fetch_daily_price(ticker, target_date, mst_info)
+                
+                if res:
+                    collected_today.append(res)
+                    # [데이터 샘플 로그] 하루의 첫 데이터 성공 시 정보 노출
+                    if len(collected_today) == 1:
+                        print(f"\n   ✅ 샘플 확인: {res['종목명']}({ticker}) | 종가: {res['종가']} | 거래량: {res['거래량']}")
 
-            # 4. 회차별 즉시 저장 (안정성을 위해 한 회차 끝날 때마다 병합 및 저장)
-            if collected:
-                df_new = pd.DataFrame(collected)
+            # 3. 하루 완료 시 즉시 저장 (원본 칼럼 구조 유지)
+            if collected_today:
+                df_new = pd.DataFrame(collected_today)
                 base_cols = ["날짜", "종목코드", "종목명", "구분(출처)", "종가", "시가", "고가", "저가", "거래량", "거래대금", "회전율", "상장주수", "락구분", "재평가사유"]
                 investor_cols = ["외국인순매수수량", "외국인순매수대금", "기관계순매수수량", "기관계순매수대금", "기금순매수수량", "기금순매수대금", "개인순매수수량", "개인순매수대금", "증권순매수수량", "투자신탁순매수수량", "사모펀드순매수수량", "은행순매수수량", "보험순매수수량", "종금순매수수량"]
                 program_cols = ["프로그램순매수수량", "프로그램순매수대금"]
@@ -159,15 +170,14 @@ def main():
                 
                 os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
                 df_final.to_parquet(SAVE_PATH, index=False)
-                print(f"💾 [회차 {idx+1}] 저장 완료. 총 데이터: {len(df_final)} rows")
-            
-            if idx < len(date_chunks) - 1:
-                print("💤 다음 회차를 위해 3초 대기합니다...")
-                time.sleep(3)
+                print(f"\n💾 {target_date} 저장 완료. (누적: {len(df_final)} rows)")
+            else:
+                print(f"\n⏩ {target_date}: 수집할 신규 종목 없음.")
 
     except Exception as e:
-        print(f"❌ [CRITICAL ERROR] {str(e)}")
+        print(f"\n\n❌ [CRITICAL ERROR] {str(e)}")
         traceback.print_exc()
+        sys.exit(1)  # 에러 발생 시 데이터 누락 방지를 위해 프로세스 즉시 종료
 
 if __name__ == "__main__":
     main()
