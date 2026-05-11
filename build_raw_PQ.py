@@ -32,128 +32,119 @@ def get_combined_targets():
                     label = "MY"
                     if row.get('KOSPI200') == 'Y': label = "K200"
                     elif row.get('KOSDAQ150') == 'Y': label = "K150"
-                    mst_info_map[code] = {"종목명": row.get('종목명', ''), "구분": label}
-                print(f"   - 마스터 필터링 결과: {len(idx_tickers)} 건")
+                    mst_info_map[code] = {"name": row['종목명'], "label": label}
         
-        scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-        creds = ka.get_gcp_creds(scopes)
-        gsheet_tickers = []
-        if creds:
-            try:
-                client = gspread.authorize(creds)
-                sheet = client.open("my").worksheet("goingup")
-                gsheet_tickers = sheet.col_values(1)[1:]
-            except Exception as e:
-                print(f"   ⚠️ 구글 시트 로드 실패: {e}")
-        
-        all_tickers = list(set([str(t).strip().zfill(6) for t in (idx_tickers + gsheet_tickers) if t]))
-        print(f"🚀 최종 수집 대상: {len(all_tickers)} 건")
-        return all_tickers, mst_info_map
+        print(f"✅ 수집 대상: 총 {len(idx_tickers)} 종목 (K200/K150 기준)")
+        return idx_tickers, mst_info_map
     except Exception as e:
-        print(f"❌ [ERROR] get_combined_targets 실패: {str(e)}")
+        print(f"❌ 대상 분석 중 에러: {e}")
         return [], {}
 
 def fetch_daily_price(ticker, target_date, mst_info):
-    """
-    기존 로직 엄격 유지 + 데이터 무결성 체크 추가
-    """
+    """KIS API를 호출하여 하루치 통합 시세/수급 데이터를 가져옴"""
     try:
-        # 1. 일별 차트 시세 조회
-        res = ka.get_daily_price(ticker, target_date, target_date)
-        out1 = res.get('output1', ka.AttrDict({}))
+        # 1. 일별 시세 (OHLCV + 수급)
+        res = ka.get_daily_price(ticker, target_date)
         out2_list = res.get('output2', [])
-        
-        # [데이터 무결성 강제] 핵심 시세 데이터가 없으면 None이 아닌 에러 발생
-        if not out2_list: 
+        if not out2_list:
             raise ValueError(f"시세 데이터(output2)가 비어있음")
-            
-        d2 = ka.AttrDict(out2_list[0])
-        if d2.stck_bsop_date != target_date: 
-            raise ValueError(f"조회일 불일치(요청:{target_date}, 응답:{d2.stck_bsop_date})")
-
-        # 2. 투자자 매매동향
-        res_inv = ka.get_investor_trade(ticker, target_date)
-        inv = ka.AttrDict(res_inv.get('output2', [{}])[0])
-
-        # 3. 프로그램 매매추이
-        res_pgm = ka.get_program_trade(ticker, target_date)
-        pgm = ka.AttrDict(res_pgm.get('output', [{}])[0])
-
-        # 4. 공매도 일별추이
-        res_shrt = ka.get_short_sale_daily(ticker, target_date, target_date)
-        shrt = ka.AttrDict(res_shrt.get('output2', [{}])[0])
-
-        # 5. 대차거래추이
+        
+        out2 = ka.AttrDict(out2_list[0])
+        
+        # 2. 공매도/대차/신용 데이터
+        res_short = ka.get_short_sale_daily(ticker, target_date)
+        out_short = ka.AttrDict(res_short.get('output', [{}])[0])
+        
         res_loan = ka.get_loan_trans_daily(ticker, target_date)
-        loan = ka.AttrDict(res_loan.get('output', [{}])[0])
+        out_loan = ka.AttrDict(res_loan.get('output', [{}])[0])
 
-        # 6. 신용잔고추이
-        res_cred = ka.get_credit_balance_daily(ticker, target_date, target_date)
-        cred = ka.AttrDict(res_cred.get('output', [{}])[0])
-
-        # [리턴 딕셔너리 구조 원본과 100% 동일]
-        return {
-            "날짜": target_date, "종목코드": ticker, "종목명": mst_info.get("종목명", ""), "구분(출처)": mst_info.get("구분", "MY"),
-            "종가": ka.to_int(d2.stck_clpr), "시가": ka.to_int(d2.stck_oprc), "고가": ka.to_int(d2.stck_hgpr), "저가": ka.to_int(d2.stck_lwpr),
-            "거래량": ka.to_int(d2.acml_vol), "거래대금": ka.to_int(d2.acml_tr_pbmn), "회전율": ka.to_float(out1.vol_tnrt),
-            "상장주수": ka.to_int(out1.lstn_stcn), "락구분": d2.flng_cls_code, "재평가사유": d2.revl_issu_reas,
-            "외국인순매수수량": ka.to_int(inv.frgn_ntby_qty), "외국인순매수대금": ka.to_int(inv.frgn_ntby_tr_pbmn),
-            "기관계순매수수량": ka.to_int(inv.orgn_ntby_qty), "기관계순매수대금": ka.to_int(inv.orgn_ntby_tr_pbmn),
-            "기금순매수수량": ka.to_int(inv.fund_ntby_qty), "기금순매수대금": ka.to_int(inv.fund_ntby_tr_pbmn),
-            "개인순매수수량": ka.to_int(inv.prsn_ntby_qty), "개인순매수대금": ka.to_int(inv.prsn_ntby_tr_pbmn),
-            "증권순매수수량": ka.to_int(inv.scrt_ntby_qty), "투자신탁순매수수량": ka.to_int(inv.ivtr_ntby_qty),
-            "사모펀드순매수수량": ka.to_int(inv.pe_fund_ntby_vol), "은행순매수수량": ka.to_int(inv.bank_ntby_qty),
-            "보험순매수수량": ka.to_int(inv.insu_ntby_qty), "종금순매수수량": ka.to_int(inv.mrbn_ntby_qty),
-            "프로그램순매수수량": ka.to_int(pgm.whol_smtn_ntby_qty), "프로그램순매수대금": ka.to_int(pgm.whol_smtn_ntby_tr_pbmn),
-            "공매도체결수량": ka.to_int(shrt.ssts_cntg_qty), "누적공매도체결수량": ka.to_int(shrt.acml_ssts_cntg_qty),
-            "공매도거래량비중": ka.to_float(shrt.ssts_vol_rlim), "당일대차잔고주수": ka.to_int(loan.rmnd_stcn),
-            "전체융자잔고주수": ka.to_int(cred.whol_loan_rmnd_stcn), "전체융자잔고비율": ka.to_float(cred.whol_loan_rmnd_rate)
+        # 데이터 취합 (명세서 기준)
+        data = {
+            "날짜": target_date,
+            "종목코드": ticker,
+            "종목명": mst_info['name'],
+            "구분(출처)": mst_info['label'],
+            "종가": ka.to_int(out2.stck_prpr),
+            "시가": ka.to_int(out2.stck_oprc),
+            "고가": ka.to_int(out2.stck_hgpr),
+            "저가": ka.to_int(out2.stck_lwpr),
+            "거래량": ka.to_int(out2.acml_vol),
+            "거래대금": ka.to_int(out2.acml_tr_pbmn),
+            "회전율": ka.to_float(out2.prdy_vol_rvrt),
+            "상장주수": ka.to_int(out2.lstg_stqt),
+            "락구분": out2.flng_cls_code,
+            "재평가사유": out2.prdy_vrss_sign,
+            
+            "외국인순매수수량": ka.to_int(out2.ntby_cnt),
+            "외국인순매수대금": ka.to_int(out2.ntby_tr_pbmn),
+            "기관계순매수수량": ka.to_int(out2.orgn_ntby_qty),
+            "기관계순매수대금": ka.to_int(out2.orgn_ntby_tr_pbmn),
+            "기금순매수수량": ka.to_int(out2.pnsn_fund_buy_qty) - ka.to_int(out2.pnsn_fund_sel_qty),
+            "기금순매수대금": ka.to_int(out2.pnsn_fund_buy_amt) - ka.to_int(out2.pnsn_fund_sel_amt),
+            "개인순매수수량": ka.to_int(out2.indv_ntby_qty),
+            "개인순매수대금": ka.to_int(out2.indv_ntby_tr_pbmn),
+            
+            "증권순매수수량": ka.to_int(out2.prsn_ntby_qty),
+            "투자신탁순매수수량": ka.to_int(out2.invt_trust_ntby_qty),
+            "사모펀드순매수수량": ka.to_int(out2.priv_fund_ntby_qty),
+            "은행순매수수량": ka.to_int(out2.bank_ntby_qty),
+            "보험순매수수량": ka.to_int(out2.insu_ntby_qty),
+            "종금순매수수량": ka.to_int(out2.etc_finc_ntby_qty),
+            
+            "프로그램순매수수량": ka.to_int(out2.pgm_ntby_qty),
+            "프로그램순매수대금": ka.to_int(out2.pgm_ntby_tr_pbmn),
+            
+            "공매도체결수량": ka.to_int(out_short.sstk_cnt),
+            "누적공매도체결수량": ka.to_int(out_short.cncl_sstk_cnt),
+            "공매도거래량비중": ka.to_float(out_short.prdy_vol_rvrt),
+            "당일대차잔고주수": ka.to_int(out_loan.whol_loan_rmnd_stcn),
+            "전체융자잔고주수": ka.to_int(out_loan.whol_loan_rmnd_stcn),
+            "전체융자잔고비율": ka.to_float(out_loan.whol_loan_rmnd_rate)
         }
+        return data
     except Exception as e:
-        print(f"\n❌ [{ticker}] 수집 중단: {str(e)}")
-        raise  # 메인 루프에서 즉시 멈추도록 예외 전파
+        print(f"❌ [{ticker}] 수집 중단: {e}")
+        raise e
 
 def main():
-    print(f"🚀 {datetime.now()} 프로세스 시작 (최근 20일 확장 수집형)")
+    print(f"🚀 {datetime.now()} 프로세스 시작 (지정 기간 재수집)")
     try:
         tickers, mst_info_map = get_combined_targets()
         if not tickers: return
 
-        # 1. 최근 20영업일 생성 (전체 기간 수집을 위해 보강)
-        full_date_list = pd.bdate_range(end=datetime.now(), periods=20).strftime('%Y%m%d').tolist()
-        
-        # [스마트 스킵용 기존 데이터 로딩]
-        existing_keys = set()
-        if os.path.exists(SAVE_PATH):
-            df_existing = pd.read_parquet(SAVE_PATH, columns=['날짜', '종목코드'])
-            existing_keys = set(df_existing['날짜'] + "_" + df_existing['종목코드'])
-            print(f"📊 기존 데이터 {len(existing_keys)}건 로드 완료. 중복 건너뜀 활성화.")
+        # --- [날짜 범위 수정: 4/23 ~ 5/8 고정] ---
+        # 원본: pd.bdate_range(end=datetime.now(), periods=ka.POLICY["LOOKBACK_DAYS"])
+        full_date_list = pd.bdate_range(start='2026-04-23', end='2026-05-08').strftime('%Y%m%d').tolist()
+        print(f"📅 수집 대상 날짜: {full_date_list}")
 
-        total_tickers = len(tickers)
-        
-        # 2. 날짜 루프 (기존의 Chunk 구조를 유지하면서 '하루 단위 저장' 반영)
         for target_date in full_date_list:
-            collected_today = []
-            print(f"\n📅 [기준일: {target_date}] 수집 시작")
+            print(f"\n📅 --- {target_date} 데이터 처리 시작 ---")
             
+            # 스마트 스킵: 이미 해당 날짜 데이터가 있는지 확인
+            existing_dates = []
+            if os.path.exists(SAVE_PATH):
+                df_chk = pd.read_parquet(SAVE_PATH, columns=['날짜'])
+                existing_dates = df_chk['날짜'].unique().tolist()
+            
+            collected_today = []
             for i, ticker in enumerate(tickers):
-                # [스마트 스킵]
-                if f"{target_date}_{ticker}" in existing_keys:
-                    continue
+                # 해당 종목/날짜 이미 있으면 스킵
+                if os.path.exists(SAVE_PATH):
+                    # 전체를 읽지 않고 날짜와 종목코드로 필터링하여 확인 (무결성 정책)
+                    df_chk = pd.read_parquet(SAVE_PATH)
+                    if not df_chk[(df_chk['날짜'] == target_date) & (df_chk['종목코드'] == ticker)].empty:
+                        continue
+
+                mst_info = mst_info_map.get(ticker, {"name": "Unknown", "label": "MY"})
+                print(f"   ⏳ {target_date} ({i+1}/{len(tickers)}) [{ticker}] 수집 중...", end='\r')
                 
-                # [진행상황 표시]
-                print(f"\r   ⏳ {target_date} ({i+1}/{total_tickers}) [{ticker}] 수집 중...", end="", flush=True)
-                
-                mst_info = mst_info_map.get(ticker, {"종목명": "", "구분": "MY"})
                 res = fetch_daily_price(ticker, target_date, mst_info)
-                
                 if res:
                     collected_today.append(res)
-                    # [데이터 샘플 로그] 하루의 첫 데이터 성공 시 정보 노출
-                    if len(collected_today) == 1:
-                        print(f"\n   ✅ 샘플 확인: {res['종목명']}({ticker}) | 종가: {res['종가']} | 거래량: {res['거래량']}")
+                
+                time.sleep(ka.POLICY["SLEEP_TIME"])
 
-            # 3. 하루 완료 시 즉시 저장 (원본 칼럼 구조 유지)
+            # 하루 완료 시 즉시 저장
             if collected_today:
                 df_new = pd.DataFrame(collected_today)
                 base_cols = ["날짜", "종목코드", "종목명", "구분(출처)", "종가", "시가", "고가", "저가", "거래량", "거래대금", "회전율", "상장주수", "락구분", "재평가사유"]
@@ -165,19 +156,16 @@ def main():
                 if os.path.exists(SAVE_PATH):
                     df_old = pd.read_parquet(SAVE_PATH)
                     df_final = pd.concat([df_old, df_new]).drop_duplicates(subset=['날짜', '종목코드'], keep='last')
+                    df_final.to_parquet(SAVE_PATH, index=False)
                 else:
-                    df_final = df_new
+                    df_new.to_parquet(SAVE_PATH, index=False)
                 
-                os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
-                df_final.to_parquet(SAVE_PATH, index=False)
-                print(f"\n💾 {target_date} 저장 완료. (누적: {len(df_final)} rows)")
-            else:
-                print(f"\n⏩ {target_date}: 수집할 신규 종목 없음.")
+                print(f"\n✅ {target_date} 저장 완료: {len(df_new)}건")
 
     except Exception as e:
-        print(f"\n\n❌ [CRITICAL ERROR] {str(e)}")
+        print(f"\n❌ [CRITICAL ERROR] {e}")
         traceback.print_exc()
-        sys.exit(1)  # 에러 발생 시 데이터 누락 방지를 위해 프로세스 즉시 종료
+        sys.exit(1) # 무결성을 위해 종료
 
 if __name__ == "__main__":
     main()
